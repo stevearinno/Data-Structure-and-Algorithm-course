@@ -7,6 +7,9 @@
 #include <vector>
 #include <utility>
 #include <limits>
+#include <unordered_set>
+#include <unordered_map>
+#include <memory>
 
 // Type for beacon IDs
 using BeaconID = std::string;
@@ -76,6 +79,16 @@ using Cost = int;
 
 // Return value for cases where cost is unknown
 Cost const NO_COST = NO_VALUE;
+
+struct Beacon
+{
+    BeaconID id = NO_ID;
+    std::string name = NO_NAME;
+    Coord coord = NO_COORD;
+    Color color = NO_COLOR;
+    std::unordered_set<BeaconID> parents;
+    BeaconID child;
+};
 
 
 // This is the class you are supposed to implement
@@ -172,8 +185,23 @@ public:
     // Short rationale for estimate:
     Color total_color(BeaconID id);
 
+    std::unordered_map<BeaconID, std::shared_ptr<Beacon>> BeaconDB;
+
+
+
 private:
     // Add stuff needed for your class implementation here
+    int no_of_beacon = 0;
+    BeaconID min_bright_beacon = NO_ID;
+    BeaconID max_bright_beacon = NO_ID;
+    int min_bright_level = 0;
+    int max_bright_level = 0;
+
+    bool find_id(BeaconID id);
+    BeaconID find_child(BeaconID id);
+//    std::unordered_set<BeaconID> find_roots(BeaconID id);
+    bool is_loop(BeaconID source_id, BeaconID target_id);
+    int brightness_level(BeaconID id);
 
 };
 
