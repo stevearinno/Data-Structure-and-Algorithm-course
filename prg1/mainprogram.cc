@@ -380,8 +380,10 @@ MainProgram::CmdResult MainProgram::cmd_random_add(ostream& output, MatchIter be
 
     unsigned int size = convert_string_to<unsigned int>(sizestr);
 
-    Coord min{1, 1};
-    Coord max{100, 100};
+    Coord def_min{1, 1};
+    Coord def_max{100, 100};
+    Coord min = def_min;
+    Coord max = def_max;
     if (!minxstr.empty() && !minystr.empty() && !maxxstr.empty() && !maxystr.empty())
     {
         min.x = convert_string_to<unsigned int>(minxstr);
@@ -406,6 +408,12 @@ MainProgram::CmdResult MainProgram::cmd_random_add(ostream& output, MatchIter be
                 if (y > max.y) { max.y = y; }
             }
         }
+    }
+
+    if (min == max)
+    {
+        min = def_min;
+        max = def_max;
     }
 
     add_random_beacons(size, min, max);
