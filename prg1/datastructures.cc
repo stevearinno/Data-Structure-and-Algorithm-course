@@ -353,11 +353,10 @@ bool Datastructures::remove_beacon(BeaconID id)
     {
         if (BeaconDB[id]->child != NO_ID)
         {
-            update_total_color(id);
             BeaconID child_id = find_child(id);
             BeaconDB[child_id]->no_of_parents--;
             BeaconDB[child_id]->parents.erase(id);
-
+            update_total_color(id);
         }
         if (BeaconDB[id]->parents.size() != 0)
         {
@@ -543,8 +542,21 @@ void Datastructures::update_total_color(BeaconID id)
         new_sum_color_child.g = old_sum_color_child.g - transmitted_color.g;
         new_sum_color_child.b = old_sum_color_child.b - transmitted_color.b;
 
+        Color old_color_child;
+        old_color_child.r = old_sum_color_child.r/(BeaconDB[child]->no_of_parents+2);
+        old_color_child.g = old_sum_color_child.g/(BeaconDB[child]->no_of_parents+2);
+        old_color_child.b = old_sum_color_child.b/(BeaconDB[child]->no_of_parents+2);
+
+        Color new_color_child;
+        new_color_child.r = new_sum_color_child.r/(BeaconDB[child]->no_of_parents+1);
+        new_color_child.g = new_sum_color_child.g/(BeaconDB[child]->no_of_parents+1);
+        new_color_child.b = new_sum_color_child.b/(BeaconDB[child]->no_of_parents+1);
         BeaconDB[child]->sum_color = new_sum_color_child;
-        update_total_color(child);
+        if (BeaconDB[child]->child != NO_ID)
+        {
+            modify_total_color(BeaconDB[child]->child, new_color_child, old_color_child);
+        }
+//        update_total_color(child);
     }
 }
 
