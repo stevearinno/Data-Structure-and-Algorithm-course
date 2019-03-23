@@ -86,8 +86,10 @@ struct Beacon
     std::string name = NO_NAME;
     Coord coord = NO_COORD;
     Color color = NO_COLOR;
+    Color sum_color = NO_COLOR;
     std::unordered_set<BeaconID> parents;
-    BeaconID child;
+    BeaconID child = NO_ID;
+    int no_of_parents = 0;
 };
 
 
@@ -99,90 +101,113 @@ public:
     Datastructures();
     ~Datastructures();
 
-    // Estimate of performance:
-    // Short rationale for estimate:
+    // Estimate of performance: O(1)
+    // Short rationale for estimate: O(1) because I have already dedicate one parameter for this.
+    // But if you take into account the process of counting the beacon which I do every time
+    // the beacon is added, so it is O(n).
     int beacon_count();
 
-    // Estimate of performance:
-    // Short rationale for estimate:
+    // Estimate of performance: O(1)
+    // Short rationale for estimate: I just use one command to clear
     void clear_beacons();
 
-    // Estimate of performance:
-    // Short rationale for estimate:
+    // Estimate of performance: O(n)
+    // Short rationale for estimate: It is the combination of iteration O(n) and element
+    // addition to a vector O(1)
     std::vector<BeaconID> all_beacons();
 
-    // Estimate of performance:
-    // Short rationale for estimate:
+    // Estimate of performance: O(n)
+    // Short rationale for estimate: I add the data to the unordered map, others are only O(1)
+    // commands.
     bool add_beacon(BeaconID id, std::string const& name, Coord xy, Color color);
 
-    // Estimate of performance:
-    // Short rationale for estimate:
+    // Estimate of performance: O(n)
+    // Short rationale for estimate: Searching through unordered map.
     std::string get_name(BeaconID id);
 
-    // Estimate of performance:
-    // Short rationale for estimate:
+    // Estimate of performance: O(n)
+    // Short rationale for estimate: Searching through unordered map.
     Coord get_coordinates(BeaconID id);
 
-    // Estimate of performance:
-    // Short rationale for estimate:
+    // Estimate of performance: O(n)
+    // Short rationale for estimate: Searching through unordered map.
     Color get_color(BeaconID id);
 
     // We recommend you implement the operations below only after implementing the ones above
 
-    // Estimate of performance:
-    // Short rationale for estimate:
+    // Estimate of performance: O(n)
+    // Short rationale for estimate: The process contains iterating and moving unordered set
+    // to multimap and then iterating and moving multipmap to vector. So the maximum complexity
+    // is for iterating which is O(n)
     std::vector<BeaconID> beacons_alphabetically();
 
-    // Estimate of performance:
-    // Short rationale for estimate:
+    // Estimate of performance: O(n)
+    // Short rationale for estimate: The process contains iterating and moving unordered set
+    // to multimap and then iterating and moving multipmap to vector. So the maximum complexity
+    // is for iterating which is O(n)
     std::vector<BeaconID> beacons_brightness_increasing();
 
-    // Estimate of performance:
-    // Short rationale for estimate:
+    // Estimate of performance: O(1)
+    // Short rationale for estimate: O(1) because I have already dedicate one parameter for this.
     BeaconID min_brightness();
 
-    // Estimate of performance:
-    // Short rationale for estimate:
+    // Estimate of performance: O(1)
+    // Short rationale for estimate: O(1) because I have already dedicate one parameter for this.
     BeaconID max_brightness();
 
-    // Estimate of performance:
-    // Short rationale for estimate:
+    // Estimate of performance: O(n log n)
+    // Short rationale for estimate: The process includes iterating through unordered map and
+    // moving the data to a vector. Then, sorting the vector. The maximum complexity is O(n log n)
     std::vector<BeaconID> find_beacons(std::string const& name);
 
-    // Estimate of performance:
-    // Short rationale for estimate:
+    // Estimate of performance: O(n)
+    // Short rationale for estimate: Searching element in unordered map
     bool change_beacon_name(BeaconID id, std::string const& newname);
 
-    // Estimate of performance:
-    // Short rationale for estimate:
+    // Estimate of performance: O(n)
+    // Short rationale for estimate: Searching element in unordered map and I also update the colors
+    // of the children
     bool change_beacon_color(BeaconID id, Color newcolor);
 
     // We recommend you implement the operations below only after implementing the ones above
 
-    // Estimate of performance:
-    // Short rationale for estimate:
+    // Estimate of performance: O(n)
+    // Short rationale for estimate: It has several time iteration process, but never nested iteration.
+    // Other commands have only constant complexity. So the maximum complexity belongs to iteration
+    // through unordered map.
     bool add_lightbeam(BeaconID sourceid, BeaconID targetid);
 
-    // Estimate of performance:
-    // Short rationale for estimate:
+    // Estimate of performance: O(n)
+    // Short rationale for estimate: This process includes searching element through unordered map
+    // and put it into set and then move the data in the set to vector. The maximum complexity is to
+    // searching the data through unordered map, which is O(n)
     std::vector<BeaconID> get_lightsources(BeaconID id);
 
-    // Estimate of performance:
-    // Short rationale for estimate:
+    // Estimate of performance: O(n)
+    // Short rationale for estimate: This process contains searching element through unordered map
+    // and pushing to a vector. The maximum complexity comes from the searching process which is O(n)
     std::vector<BeaconID> path_outbeam(BeaconID id);
 
     // Non-compulsory operations
 
-    // Estimate of performance:
-    // Short rationale for estimate:
+    // Estimate of performance: O(n)
+    // Short rationale for estimate: It contains searching element through unordered map and lots of
+    // recursion due to updating the colors. Updating the colors complexity is also O(n), the same as
+    // searching element through unordered map. But the complexity is added, not multiplied.
     bool remove_beacon(BeaconID id);
 
-    // Estimate of performance:
-    // Short rationale for estimate:
+    // Estimate of performance: O(n)
+    // Short rationale for estimate: My method is to find the root first which includes recursion, the
+    // complexity of the recursion is O(n) because it narrows down the data as the recursion runs. Then
+    // it iterates all the children and push it into the vector, the complexity is also O(n)
     std::vector<BeaconID> path_inbeam_longest(BeaconID id);
 
-    // Estimate of performance:
-    // Short rationale for estimate:
+    // Estimate of performance: O(n)
+    // Short rationale for estimate: To get the total color, it process the parameter of "total_sum" that
+    // is always updated in all the activities that have effects to the color of the lightbeams. The
+    // function itself has the complexity of O(n) because it searches through the unordered map and then
+    // all the activities to update the color (when the beam added, removed, changed, etc) is also O(n).
+    // So the maximum complexity is O(n)
     Color total_color(BeaconID id);
 
     std::unordered_map<BeaconID, std::shared_ptr<Beacon>> BeaconDB;
@@ -199,9 +224,13 @@ private:
 
     bool find_id(BeaconID id);
     BeaconID find_child(BeaconID id);
-//    std::unordered_set<BeaconID> find_roots(BeaconID id);
     bool is_loop(BeaconID source_id, BeaconID target_id);
-    int brightness_level(BeaconID id);
+    unsigned int brightness_level(BeaconID id);
+    std::vector<BeaconID> longest_parents(BeaconID id);
+    void check_maxmin_brightness (BeaconID id);
+    void update_total_color(BeaconID id);
+    void modify_total_color(BeaconID id, Color new_color, Color old_color = NO_COLOR);
+    BeaconID find_root_beacon(std::unordered_set<BeaconID> beacon_set);
 
 };
 
