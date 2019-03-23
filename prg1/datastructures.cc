@@ -558,9 +558,9 @@ void Datastructures::modify_total_color(BeaconID id, Color new_color, Color old_
     if (old_color == NO_COLOR)
     {
         Color older_color;
-        older_color.r = old_sum_color.r/(BeaconDB[id]->no_of_parents+1);
-        older_color.g = old_sum_color.g/(BeaconDB[id]->no_of_parents+1);
-        older_color.b = old_sum_color.b/(BeaconDB[id]->no_of_parents+1);
+        older_color.r = old_sum_color.r/(BeaconDB[id]->no_of_parents);
+        older_color.g = old_sum_color.g/(BeaconDB[id]->no_of_parents);
+        older_color.b = old_sum_color.b/(BeaconDB[id]->no_of_parents);
 
         Color new_received_color = new_color;
         Color new_sum_color;
