@@ -668,11 +668,15 @@ void MainProgram::test_all_beacons()
     ds_.all_beacons();
 }
 
-MainProgram::CmdResult MainProgram::cmd_all_xpoints(std::ostream&, MainProgram::MatchIter begin, MainProgram::MatchIter end)
+MainProgram::CmdResult MainProgram::cmd_all_xpoints(std::ostream& output, MainProgram::MatchIter begin, MainProgram::MatchIter end)
 {
     assert( begin == end && "Impossible number of parameters!");
 
     auto xpoints = ds_.all_xpoints();
+    if (xpoints.empty())
+    {
+        output << "No xpoints!" << endl;
+    }
 
     return {ResultType::COORDLIST, xpoints};
 }
@@ -687,9 +691,16 @@ MainProgram::CmdResult MainProgram::cmd_all_fibres(std::ostream& output, MainPro
     assert( begin == end && "Impossible number of parameters!");
 
     auto fibres = ds_.all_fibres();
-    for (auto& [xy1, xy2] : fibres)
+    if (fibres.empty())
     {
-        output << "(" << xy1.x << "," << xy1.y << ") -> (" << xy2.x << "," << xy2.y << ")" << endl;
+        output << "No fibres!" << endl;
+    }
+    else
+    {
+        for (auto& [xy1, xy2] : fibres)
+        {
+            output << "(" << xy1.x << "," << xy1.y << ") -> (" << xy2.x << "," << xy2.y << ")" << endl;
+        }
     }
 
     return {};
@@ -758,9 +769,9 @@ MainProgram::CmdResult MainProgram::cmd_random_fibres(std::ostream& output, Main
 
     unsigned int random_fibres = convert_string_to<unsigned int>(sizestr);
 
-    add_random_fibres(random_fibres);
+    add_random_fibres(output, random_fibres);
 
-    output << "Added random " << random_fibres << " fibres." << endl;
+    output << "Added at most " << random_fibres << " random fibres." << endl;
 
     view_dirty = true;
 
@@ -792,7 +803,7 @@ MainProgram::CmdResult MainProgram::cmd_random_labyrinth(std::ostream& output, M
     int ysize = convert_string_to<int>(ystr);
     int extra = convert_string_to<int>(extrastr);
 
-    create_fibre_labyrinth(xsize, ysize, extra);
+    create_fibre_labyrinth(output, xsize, ysize, extra);
 
     output << "Added fibre labyrinth with at most " << extra << " extra routes." << endl;
 
@@ -1776,7 +1787,7 @@ std::string MainProgram::n_to_id(unsigned long n)
     return name;
 }
 
-void MainProgram::create_fibre_labyrinth(int xsize, int ysize, int extrafibres)
+void MainProgram::create_fibre_labyrinth(std::ostream& output, int xsize, int ysize, int extrafibres)
 {
     // Clear existing fibres
     ds_.clear_fibres();
@@ -1854,7 +1865,7 @@ void MainProgram::create_fibre_labyrinth(int xsize, int ysize, int extrafibres)
         }
     }
     sort(beaconxys.begin(), beaconxys.end());
-    add_labyrinth_fibres({xsize, ysize}, start, start, ENDDIR, 0, xpoints, beaconxys);
+    add_labyrinth_fibres(output, {xsize, ysize}, start, start, ENDDIR, 0, xpoints, beaconxys);
 }
 
 Coord MainProgram::move_to_dir(Coord coord, MainProgram::Dir dir)
@@ -1873,7 +1884,7 @@ Coord MainProgram::move_to_dir(Coord coord, MainProgram::Dir dir)
     return {x2, y2};
 }
 
-void MainProgram::add_labyrinth_fibres(Coord size, Coord pos, Coord from, Dir fromdir, Cost fromcost, vector<XpointInfo>& xpoints, vector<Coord> const& beaconxys)
+void MainProgram::add_labyrinth_fibres(std::ostream& output, Coord size, Coord pos, Coord from, Dir fromdir, Cost fromcost, vector<XpointInfo>& xpoints, vector<Coord> const& beaconxys)
 {
     Cost const UNITCOST = 2;
     auto& xpointinfo = xpoints[pos.x*size.y + pos.y];
@@ -1881,13 +1892,17 @@ void MainProgram::add_labyrinth_fibres(Coord size, Coord pos, Coord from, Dir fr
             !binary_search(beaconxys.begin(), beaconxys.end(), pos)) // Only connection is to the same direction, and we are not at a beacon
     {
         xpointinfo.visited = true; // Visited now
-        add_labyrinth_fibres(size, move_to_dir(pos, fromdir), from, fromdir, fromcost+UNITCOST, xpoints, beaconxys); // Continue in the same direction
+        add_labyrinth_fibres(output, size, move_to_dir(pos, fromdir), from, fromdir, fromcost+UNITCOST, xpoints, beaconxys); // Continue in the same direction
     }
     else
     {
         Coord xypos{2*pos.x + (pos.y % 2), 2*pos.y};
         Coord xyfrom{2*from.x + (from.y % 2), 2*from.y};
-        ds_.add_fibre(xyfrom, xypos, fromcost+UNITCOST); // Add fibre to here
+        if (xyfrom < xypos)
+        {
+            ds_.add_fibre(xyfrom, xypos, fromcost+UNITCOST); // Add fibre to here
+            output << "add_fibre (" << xyfrom.x << "," << xyfrom.y << ") (" << xypos.x << "," << xypos.y << ") " << fromcost+UNITCOST << endl;
+        }
         if (xpointinfo.visited) { return; } // Already visited, no need to scan further
         xpointinfo.visited = true; // Visited now
         for (int dir=FIRSTDIR; dir!=ENDDIR; ++dir)
@@ -1895,13 +1910,13 @@ void MainProgram::add_labyrinth_fibres(Coord size, Coord pos, Coord from, Dir fr
             if (xpointinfo.dirs[dir])
             {
                 auto pos2 = move_to_dir(pos, static_cast<Dir>(dir));
-                add_labyrinth_fibres(size, pos2, pos, static_cast<Dir>(dir), 0, xpoints, beaconxys);
+                add_labyrinth_fibres(output, size, pos2, pos, static_cast<Dir>(dir), 0, xpoints, beaconxys);
             }
         }
     }
 }
 
-void MainProgram::add_random_fibres(unsigned int random_fibres)
+void MainProgram::add_random_fibres(std::ostream& output, unsigned int random_fibres)
 {
     vector<pair<Coord, Coord>> addedfibres;
     auto beacons = ds_.all_beacons();
@@ -1923,7 +1938,10 @@ void MainProgram::add_random_fibres(unsigned int random_fibres)
                 if (doIntersect(p1, p2, fibre.first, fibre.second)) { intersects = true; break; }
             }
             if (intersects) { continue; }
-            ds_.add_fibre(ds_.get_coordinates(*i1), ds_.get_coordinates(*i2), cost);
+            auto xyfrom = ds_.get_coordinates(*i1);
+            auto xyto = ds_.get_coordinates(*i2);
+            ds_.add_fibre(xyfrom, xyto, cost);
+            output << "add_fibre (" << xyfrom.x << "," << xyfrom.y << ") (" << xyto.x << "," << xyto.y << ") " << cost << endl;
             addedfibres.push_back({p1, p2});
         }
     }

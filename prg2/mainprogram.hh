@@ -168,7 +168,7 @@ private:
     template<std::vector<BeaconID>(Datastructures::*MFUNC)()>
     void NoParListTestCmd();
 
-    void create_fibre_labyrinth(int xsize, int ysize, int extrafibres);
+    void create_fibre_labyrinth(std::ostream& output, int xsize, int ysize, int extrafibres);
 
     enum Dir {FIRSTDIR=0, WEST=0, EAST, NORTHWEST, NORTHEAST, SOUTHWEST, SOUTHEAST, ENDDIR};
     std::array<Dir, ENDDIR> invert_dir{{EAST, WEST, SOUTHEAST, SOUTHWEST, NORTHEAST, NORTHWEST}};
@@ -178,8 +178,8 @@ private:
         std::bitset<6> dirs;
         bool visited;
     };
-    void add_labyrinth_fibres(Coord size, Coord pos, Coord from, Dir fromdir, Cost fromcost, std::vector<XpointInfo>& xpoints, const std::vector<Coord>& beaconxys);
-    void add_random_fibres(unsigned int random_fibres);
+    void add_labyrinth_fibres(std::ostream& output, Coord size, Coord pos, Coord from, Dir fromdir, Cost fromcost, std::vector<XpointInfo>& xpoints, const std::vector<Coord>& beaconxys);
+    void add_random_fibres(std::ostream& output, unsigned int random_fibres);
 
     // Helper functions for add_random_fibres
     static bool doIntersect(Coord p1, Coord q1, Coord p2, Coord q2);
