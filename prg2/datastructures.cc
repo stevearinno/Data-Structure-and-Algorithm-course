@@ -641,7 +641,15 @@ BeaconID Datastructures::find_root_beacon(std::unordered_set<BeaconID> beacon_se
 std::vector<Coord> Datastructures::all_xpoints()
 {
     // Replace this with your implementation
-    return {};
+    std::vector<Coord> xpoints_vector;
+//            std::unordered_map<Coord, std::shared_ptr<Xpoint>, CoordHash>::const_iterator map_iterator = XpointDB.begin();
+            std::map<Coord, std::shared_ptr<Xpoint>, Compare>::const_iterator map_iterator = XpointDB.begin();
+            for(; map_iterator != XpointDB.end(); map_iterator++)
+            {
+                xpoints_vector.push_back(map_iterator->first);
+            }
+
+    return xpoints_vector;
 }
 
 bool Datastructures::add_fibre(Coord xpoint1, Coord xpoint2, Cost cost)
@@ -665,6 +673,14 @@ bool Datastructures::add_fibre(Coord xpoint1, Coord xpoint2, Cost cost)
 
         XpointDB[xpoint1] = new_xpoint1;
         XpointDB[xpoint2] = new_xpoint2;
+
+//        qDebug() << "map list";
+//        std::map<Coord, std::shared_ptr<Xpoint>>::const_iterator map_iterator = XpointDB.begin();
+//        for(; map_iterator != XpointDB.end(); map_iterator++)
+//        {
+//            qDebug() << map_iterator->first.x << map_iterator->first.y;
+//            qDebug() << "---";
+//        }
 
         return true;
     }
@@ -695,6 +711,21 @@ bool Datastructures::remove_fibre(Coord /*xpoint1*/, Coord /*xpoint2*/)
 void Datastructures::clear_fibres()
 {
     // Replace this with your implementation
+//    std::unordered_map<Coord, std::shared_ptr<Xpoint>, CoordHash>::const_iterator db_iterator = XpointDB.begin();
+    std::map<Coord, std::shared_ptr<Xpoint>, Compare>::const_iterator db_iterator = XpointDB.begin();
+    for(; db_iterator != XpointDB.end(); db_iterator++)
+    {
+        std::unordered_set<std::shared_ptr<Edge>> edge_set = db_iterator->second->edges;
+        std::unordered_set<std::shared_ptr<Edge>>::const_iterator set_iterator = edge_set.begin();
+        for(; set_iterator != edge_set.end(); set_iterator++)
+        {
+            std::shared_ptr<Edge> edge_element = *set_iterator;
+            edge_element->target = nullptr;
+        }
+        db_iterator->second->edges.clear();
+    }
+    XpointDB.clear();
+
 }
 
 std::vector<std::pair<Coord, Cost> > Datastructures::route_any(Coord /*fromxpoint*/, Coord /*toxpoint*/)
@@ -729,7 +760,7 @@ Cost Datastructures::trim_fibre_network()
 
 bool Datastructures::find_xconnection(Coord xpoint1, Coord xpoint2)
 {
-    if (XpointDB.find(xpoint1) == XpointDB.end() || XpointDB.find(xpoint2) == XpointDB.end())
+    if (!find_xpoint(xpoint1) || !find_xpoint(xpoint2))
     {
         return false;
     }
@@ -737,24 +768,28 @@ bool Datastructures::find_xconnection(Coord xpoint1, Coord xpoint2)
     {
         std::unordered_set<std::shared_ptr<Edge>> edge_list = XpointDB[xpoint1]->edges;
         std::unordered_set<std::shared_ptr<Edge>>::iterator db_iterator = edge_list.begin();
-        for (;db_iterator != XpointDB[xpoint1]->edges.end(); db_iterator++)
+        for (;db_iterator != edge_list.end(); db_iterator++)
         {
-            if (db_iterator->target == XpointDB[xpoint2])
+            std::shared_ptr<Edge> edge_element = *db_iterator;
+//            if (edge_element->target->coord == XpointDB[xpoint2]->coord)
+            if (operator==(edge_element->target->coord, XpointDB[xpoint2]->coord))
             {
                 return true;
             }
-
         }
-
-//        std::unordered_set<std::shared_ptr<Edge>>::const_iterator db_iterator = XpointDB[xpoint1]->edges.begin();
-//        for(;db_iterator != XpointDB[xpoint1]->edges.end(); db_iterator++)
-//        {
-//            if (db_iterator    == XpointDB[xpoint2])
-//            {
-//                return true;
-//            }
-//        }
         return false;
+    }
+}
+
+bool Datastructures::find_xpoint(Coord xpoint)
+{
+    if (XpointDB.find(xpoint) == XpointDB.end())
+    {
+        return false;
+    }
+    else
+    {
+        return true;
     }
 }
 

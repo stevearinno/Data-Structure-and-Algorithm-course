@@ -50,12 +50,24 @@ struct CoordHash
 
 // Example: Defining < for Coord so that it can be used
 // as key for std::map/set
+
+
 inline bool operator<(Coord c1, Coord c2)
 {
     if (c1.y < c2.y) { return true; }
     else if (c2.y < c1.y) { return false; }
     else { return c1.x < c2.x; }
 }
+
+struct Compare
+{
+    bool operator()(Coord c1, Coord c2) const
+    {
+        if (c1.y < c2.y) { return true; }
+        else if (c2.y < c1.y) { return false; }
+        else { return c1.x < c2.x; }
+    }
+};
 
 // Return value for cases where coordinates were not found
 Coord const NO_COORD = {NO_VALUE, NO_VALUE};
@@ -251,7 +263,8 @@ public:
     // Short rationale for estimate:
     Cost trim_fibre_network();
 
-    std::map<Coord, std::shared_ptr<Xpoint>> XpointDB;
+//    std::unordered_map<Coord, std::shared_ptr<Xpoint>, CoordHash> XpointDB;
+    std::map<Coord, std::shared_ptr<Xpoint>, Compare> XpointDB;
 
 private:
     // Add stuff needed for your class implementation here
@@ -273,6 +286,7 @@ private:
 
     // phase 2
     bool find_xconnection(Coord xpoint1, Coord xpoint2);
+    bool find_xpoint(Coord xpoint);
 
 };
 
