@@ -7,6 +7,9 @@
 #include <vector>
 #include <utility>
 #include <limits>
+#include <unordered_set>
+#include <unordered_map>
+#include <memory>
 
 // Type for beacon IDs
 using BeaconID = std::string;
@@ -76,6 +79,18 @@ using Cost = int;
 
 // Return value for cases where cost is unknown
 Cost const NO_COST = NO_VALUE;
+
+struct Beacon
+{
+    BeaconID id = NO_ID;
+    std::string name = NO_NAME;
+    Coord coord = NO_COORD;
+    Color color = NO_COLOR;
+    Color sum_color = NO_COLOR;
+    std::unordered_set<BeaconID> parents;
+    BeaconID child = NO_ID;
+    int no_of_parents = 0;
+};
 
 
 // This is the class you are supposed to implement
@@ -172,6 +187,8 @@ public:
     // Short rationale for estimate:
     Color total_color(BeaconID id);
 
+    std::unordered_map<BeaconID, std::shared_ptr<Beacon>> BeaconDB;
+
     // Phase 2 operations
 
     // Estimate of performance:
@@ -222,6 +239,21 @@ public:
 
 private:
     // Add stuff needed for your class implementation here
+    int no_of_beacon = 0;
+    BeaconID min_bright_beacon = NO_ID;
+    BeaconID max_bright_beacon = NO_ID;
+    int min_bright_level = 0;
+    int max_bright_level = 0;
+
+    bool find_id(BeaconID id);
+    BeaconID find_child(BeaconID id);
+    bool is_loop(BeaconID source_id, BeaconID target_id);
+    unsigned int brightness_level(BeaconID id);
+    std::vector<BeaconID> longest_parents(BeaconID id);
+    void check_maxmin_brightness (BeaconID id);
+    void update_total_color(BeaconID id);
+    void modify_total_color(BeaconID id, Color new_color, Color old_color = NO_COLOR);
+    BeaconID find_root_beacon(std::unordered_set<BeaconID> beacon_set);
 
 };
 
