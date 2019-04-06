@@ -252,6 +252,68 @@ MainProgram::CmdResult MainProgram::cmd_add_lightbeam(std::ostream& output, Main
     return {};
 }
 
+MainProgram::CmdResult MainProgram::cmd_add_fibre(std::ostream& output, MainProgram::MatchIter begin, MainProgram::MatchIter end)
+{
+    string x1str = *begin++;
+    string y1str = *begin++;
+    string x2str = *begin++;
+    string y2str = *begin++;
+    string coststr = *begin++;
+    assert( begin == end && "Impossible number of parameters!");
+
+    Coord xy1 = {convert_string_to<int>(x1str), convert_string_to<int>(y1str)};
+    Coord xy2 = {convert_string_to<int>(x2str), convert_string_to<int>(y2str)};
+    Cost cost = convert_string_to<int>(coststr);
+    bool ok = ds_.add_fibre(xy1, xy2, cost);
+    if (ok)
+    {
+        output << "Added fibre: (" << xy1.x << "," << xy1.y << ") <-> (" << xy2.x << "," << xy2.y << "), cost " << cost << endl;
+    }
+    else
+    {
+        output << "Adding fibre failed!" << endl;
+    }
+
+    view_dirty = true;
+    return {};
+}
+
+MainProgram::CmdResult MainProgram::cmd_remove_fibre(std::ostream& output, MainProgram::MatchIter begin, MainProgram::MatchIter end)
+{
+    string x1str = *begin++;
+    string y1str = *begin++;
+    string x2str = *begin++;
+    string y2str = *begin++;
+    assert( begin == end && "Impossible number of parameters!");
+
+    Coord xy1 = {convert_string_to<int>(x1str), convert_string_to<int>(y1str)};
+    Coord xy2 = {convert_string_to<int>(x2str), convert_string_to<int>(y2str)};
+    bool ok = ds_.remove_fibre(xy1, xy2);
+    if (ok)
+    {
+        output << "Removed fibre: (" << xy1.x << "," << xy1.y << ") <-> (" << xy2.x << "," << xy2.y << ")" << endl;
+    }
+    else
+    {
+        output << "Removing fibre failed!" << endl;
+    }
+
+    view_dirty = true;
+    return {};
+}
+
+void MainProgram::test_remove_fibre()
+{
+    if (random_beacons_added_ > 0) // Don't do anything if there's no beacons
+    {
+        auto id1 = n_to_id(random<decltype(random_beacons_added_)>(0, random_beacons_added_));
+        auto id2 = n_to_id(random<decltype(random_beacons_added_)>(0, random_beacons_added_));
+        ds_.remove_fibre(ds_.get_coordinates(id1), ds_.get_coordinates(id2));
+        test_get_functions(id1);
+        test_get_functions(id2);
+    }
+}
+
 MainProgram::CmdResult MainProgram::cmd_path_outbeam(std::ostream& /*output*/, MainProgram::MatchIter begin, MainProgram::MatchIter end)
 {
     BeaconID id = *begin++;
@@ -606,6 +668,44 @@ void MainProgram::test_all_beacons()
     ds_.all_beacons();
 }
 
+MainProgram::CmdResult MainProgram::cmd_all_xpoints(std::ostream& output, MainProgram::MatchIter begin, MainProgram::MatchIter end)
+{
+    assert( begin == end && "Impossible number of parameters!");
+
+    auto xpoints = ds_.all_xpoints();
+    if (xpoints.empty())
+    {
+        output << "No xpoints!" << endl;
+    }
+
+    return {ResultType::COORDLIST, xpoints};
+}
+
+void MainProgram::test_all_xpoints()
+{
+    ds_.all_xpoints();
+}
+
+MainProgram::CmdResult MainProgram::cmd_all_fibres(std::ostream& output, MainProgram::MatchIter begin, MainProgram::MatchIter end)
+{
+    assert( begin == end && "Impossible number of parameters!");
+
+    auto fibres = ds_.all_fibres();
+    if (fibres.empty())
+    {
+        output << "No fibres!" << endl;
+    }
+    else
+    {
+        for (auto& [xy1, xy2] : fibres)
+        {
+            output << "(" << xy1.x << "," << xy1.y << ") -> (" << xy2.x << "," << xy2.y << ")" << endl;
+        }
+    }
+
+    return {};
+}
+
 MainProgram::CmdResult MainProgram::cmd_lightsources(std::ostream& output, MainProgram::MatchIter begin, MainProgram::MatchIter end)
 {
     string id = *begin++;
@@ -628,6 +728,88 @@ void MainProgram::test_lightsources()
         ds_.get_lightsources(id);
         test_get_functions(id);
     }
+}
+
+MainProgram::CmdResult MainProgram::cmd_fibres(std::ostream& output, MainProgram::MatchIter begin, MainProgram::MatchIter end)
+{
+    string xstr = *begin++;
+    string ystr = *begin++;
+    assert( begin == end && "Impossible number of parameters!");
+
+    Coord xy = {convert_string_to<int>(xstr), convert_string_to<int>(ystr)};
+    auto fibres = ds_.get_fibres_from(xy);
+    if (fibres.empty())
+    {
+        output << "No fibres!" << endl;
+    }
+
+    return {ResultType::FIBRELIST, fibres};
+}
+
+void MainProgram::test_fibres()
+{
+    if (random_beacons_added_ > 0) // Don't do anything if there's no beacons
+    {
+        auto id = n_to_id(random<decltype(random_beacons_added_)>(0, random_beacons_added_));
+        ds_.get_fibres_from(ds_.get_coordinates(id));
+        test_get_functions(id);
+    }
+}
+
+MainProgram::CmdResult MainProgram::cmd_random_fibres(std::ostream& output, MainProgram::MatchIter begin, MainProgram::MatchIter end)
+{
+    string sizestr = *begin++;
+    assert( begin == end && "Impossible number of parameters!");
+
+    if (ds_.beacon_count() < 2)
+    {
+        output << "Not enough beacons to add fibres!" << std::endl;
+        return {};
+    }
+
+    unsigned int random_fibres = convert_string_to<unsigned int>(sizestr);
+
+    add_random_fibres(output, random_fibres);
+
+    output << "Added at most " << random_fibres << " random fibres." << endl;
+
+    view_dirty = true;
+
+    return {};
+}
+
+void MainProgram::test_random_fibres()
+{
+    if (random_beacons_added_ > 0) // Don't do anything if there's no beacons
+    {
+        for (auto i=0; i<10; ++i)
+        {
+            auto id1 = n_to_id(random<decltype(random_beacons_added_)>(0, random_beacons_added_));
+            auto id2 = n_to_id(random<decltype(random_beacons_added_)>(0, random_beacons_added_));
+            Cost cost = random(0, 100);
+            ds_.add_fibre(ds_.get_coordinates(id1), ds_.get_coordinates(id2), cost);
+        }
+    }
+}
+
+MainProgram::CmdResult MainProgram::cmd_random_labyrinth(std::ostream& output, MainProgram::MatchIter begin, MainProgram::MatchIter end)
+{
+    string xstr = *begin++;
+    string ystr = *begin++;
+    string extrastr = *begin++;
+    assert( begin == end && "Impossible number of parameters!");
+
+    int xsize = convert_string_to<int>(xstr);
+    int ysize = convert_string_to<int>(ystr);
+    int extra = convert_string_to<int>(extrastr);
+
+    create_fibre_labyrinth(output, xsize, ysize, extra);
+
+    output << "Added fibre labyrinth with at most " << extra << " extra routes." << endl;
+
+    view_dirty = true;
+
+    return {};
 }
 
 MainProgram::CmdResult MainProgram::cmd_stopwatch(ostream& output, MatchIter begin, MatchIter end)
@@ -740,6 +922,166 @@ void MainProgram::test_find_beacons()
     }
 }
 
+MainProgram::CmdResult MainProgram::cmd_route_any(std::ostream& output, MainProgram::MatchIter begin, MainProgram::MatchIter end)
+{
+    string fromxstr = *begin++;
+    string fromystr = *begin++;
+    string toxstr = *begin++;
+    string toystr = *begin++;
+    assert( begin == end && "Impossible number of parameters!");
+
+    int fromx = convert_string_to<int>(fromxstr);
+    int fromy = convert_string_to<int>(fromystr);
+    int tox = convert_string_to<int>(toxstr);
+    int toy = convert_string_to<int>(toystr);
+
+    auto result = ds_.route_any({fromx, fromy}, {tox, toy});
+
+    if (result.empty())
+    {
+        output << "No path found!" << endl;
+    }
+
+    return {ResultType::PATH, result};
+}
+
+void MainProgram::test_route_any()
+{
+    if (random_beacons_added_ > 0)
+    {
+        // Choose two random beacons
+        auto id1 = n_to_id(random<decltype(random_beacons_added_)>(0, random_beacons_added_));
+        auto id2 = n_to_id(random<decltype(random_beacons_added_)>(0, random_beacons_added_));
+        ds_.route_any(ds_.get_coordinates(id1), ds_.get_coordinates(id2));
+    }
+}
+
+MainProgram::CmdResult MainProgram::cmd_route_fastest(ostream& output, MatchIter begin, MatchIter end)
+{
+    string fromxstr = *begin++;
+    string fromystr = *begin++;
+    string toxstr = *begin++;
+    string toystr = *begin++;
+    assert( begin == end && "Impossible number of parameters!");
+
+    int fromx = convert_string_to<int>(fromxstr);
+    int fromy = convert_string_to<int>(fromystr);
+    int tox = convert_string_to<int>(toxstr);
+    int toy = convert_string_to<int>(toystr);
+
+    auto result = ds_.route_fastest({fromx, fromy}, {tox, toy});
+
+    if (result.empty())
+    {
+        output << "No path found!" << endl;
+    }
+
+    return {ResultType::PATH, result};
+}
+
+void MainProgram::test_route_fastest()
+{
+    if (random_beacons_added_ > 0)
+    {
+        // Choose two random beacons
+        auto id1 = n_to_id(random<decltype(random_beacons_added_)>(0, random_beacons_added_));
+        auto id2 = n_to_id(random<decltype(random_beacons_added_)>(0, random_beacons_added_));
+        ds_.route_fastest(ds_.get_coordinates(id1), ds_.get_coordinates(id2));
+    }
+}
+
+MainProgram::CmdResult MainProgram::cmd_route_least_xpoints(std::ostream& output, MainProgram::MatchIter begin, MainProgram::MatchIter end)
+{
+    string fromxstr = *begin++;
+    string fromystr = *begin++;
+    string toxstr = *begin++;
+    string toystr = *begin++;
+    assert( begin == end && "Impossible number of parameters!");
+
+    int fromx = convert_string_to<int>(fromxstr);
+    int fromy = convert_string_to<int>(fromystr);
+    int tox = convert_string_to<int>(toxstr);
+    int toy = convert_string_to<int>(toystr);
+
+    auto result = ds_.route_least_xpoints({fromx, fromy}, {tox, toy});
+
+    if (result.empty())
+    {
+        output << "No path found!" << endl;
+    }
+
+    return {ResultType::PATH, result};
+}
+
+void MainProgram::test_route_least_xpoints()
+{
+    if (random_beacons_added_ > 0)
+    {
+        // Choose two random towns
+        auto id1 = n_to_id(random<decltype(random_beacons_added_)>(0, random_beacons_added_));
+        auto id2 = n_to_id(random<decltype(random_beacons_added_)>(0, random_beacons_added_));
+        ds_.route_least_xpoints(ds_.get_coordinates(id1), ds_.get_coordinates(id2));
+    }
+}
+
+MainProgram::CmdResult MainProgram::cmd_route_fibre_cycle(std::ostream& output, MainProgram::MatchIter begin, MainProgram::MatchIter end)
+{
+    string fromxstr = *begin++;
+    string fromystr = *begin++;
+    assert( begin == end && "Impossible number of parameters!");
+
+    int fromx = convert_string_to<int>(fromxstr);
+    int fromy = convert_string_to<int>(fromystr);
+
+    auto result = ds_.route_fibre_cycle({fromx, fromy});
+
+    if (result.empty())
+    {
+        output << "No fibre cycles found." << std::endl;
+    }
+
+    return {ResultType::CYCLE, result};
+}
+
+void MainProgram::test_route_fibre_cycle()
+{
+    if (random_beacons_added_ > 0)
+    {
+        // Choose random town
+        auto id = n_to_id(random<decltype(random_beacons_added_)>(0, random_beacons_added_));
+        ds_.route_fibre_cycle(ds_.get_coordinates(id));
+    }
+}
+
+MainProgram::CmdResult MainProgram::cmd_trim_fibre_network(std::ostream& output, MainProgram::MatchIter begin, MainProgram::MatchIter end)
+{
+    assert( begin == end && "Impossible number of parameters!");
+
+    Cost total_cost;
+    total_cost = ds_.trim_fibre_network();
+
+    output << "The remaining fibre network has total cost of " << total_cost << std::endl;
+
+    view_dirty = true;
+
+    return {};
+}
+
+MainProgram::CmdResult MainProgram::cmd_clear_fibres(std::ostream& output, MainProgram::MatchIter begin, MainProgram::MatchIter end)
+{
+    assert( begin == end && "Impossible number of parameters!");
+
+    ds_.clear_fibres();
+    output << "All fibres removed." << std::endl;
+
+    return {};
+}
+
+void MainProgram::test_trim_fibre_network()
+{
+    ds_.trim_fibre_network();
+}
+
 vector<MainProgram::CmdInfo> MainProgram::cmds_ =
 {
     {"add_beacon", "ID Name (x,y) (r,g,b)",
@@ -748,7 +1090,13 @@ vector<MainProgram::CmdInfo> MainProgram::cmds_ =
     {"random_add", "number_of_beacons_to_add  (minx,miny) (maxx,maxy) (coordinates optional)",
      "([0-9]+)(?:[[:space:]]+\\(([0-9]+)[[:space:]]*,[[:space:]]*([0-9]+)\\)[[:space:]]+\\(([0-9]+)[[:space:]]*,[[:space:]]*([0-9]+)\\))?",
      &MainProgram::cmd_random_add, &MainProgram::test_random_add },
+    {"random_fibres", "max_number_of_fibres_to_add", "([0-9]+)",
+     &MainProgram::cmd_random_fibres, &MainProgram::test_random_fibres },
+    {"random_labyrinth", "xsize ysize extra_routes",
+     "([0-9]+)[[:space:]]+([0-9]+)[[:space:]]+([0-9]+)", &MainProgram::cmd_random_labyrinth, nullptr },
     {"all_beacons", "", "", &MainProgram::cmd_all_beacons, &MainProgram::test_all_beacons },
+    {"all_xpoints", "", "", &MainProgram::cmd_all_xpoints, &MainProgram::test_all_xpoints },
+    {"all_fibres", "", "", &MainProgram::cmd_all_fibres, nullptr },
     {"beacon_count", "", "", &MainProgram::cmd_beacon_count, nullptr },
     {"clear_beacons", "", "", &MainProgram::cmd_clear_beacons, nullptr },
     {"sort_alpha", "", "", &MainProgram::NoParBeaconListCmd<&Datastructures::beacons_alphabetically>, &MainProgram::NoParListTestCmd<&Datastructures::beacons_alphabetically> },
@@ -764,9 +1112,24 @@ vector<MainProgram::CmdInfo> MainProgram::cmds_ =
     {"add_lightbeam", "SourceID TargetID",
      "([a-zA-Z0-9]+)[[:space:]]+([a-zA-Z0-9]+)", &MainProgram::cmd_add_lightbeam, nullptr },
     {"lightsources", "BeaconID", "([a-zA-Z0-9]+)", &MainProgram::cmd_lightsources, &MainProgram::test_lightsources },
+    {"add_fibre", "(x1,y1) (x2,y2) cost",
+     "\\(([0-9]+)[[:space:]]*,[[:space:]]*([0-9]+)\\)[[:space:]]+\\(([0-9]+)[[:space:]]*,[[:space:]]*([0-9]+)\\)[[:space:]]+([0-9]+)", &MainProgram::cmd_add_fibre, nullptr },
+    {"remove_fibre", "(x1,y1) (x2,y2)",
+     "\\(([0-9]+)[[:space:]]*,[[:space:]]*([0-9]+)\\)[[:space:]]+\\(([0-9]+)[[:space:]]*,[[:space:]]*([0-9]+)\\)", &MainProgram::cmd_remove_fibre, &MainProgram::test_remove_fibre },
+    {"fibres", "(x,y)", "\\(([0-9]+)[[:space:]]*,[[:space:]]*([0-9]+)\\)", &MainProgram::cmd_fibres, &MainProgram::test_fibres },
+    {"clear_fibres", "", "", &MainProgram::cmd_clear_fibres, nullptr },
     {"path_outbeam", "ID", "([A-Za-z0-9]+)", &MainProgram::cmd_path_outbeam, &MainProgram::test_path_outbeam },
     {"path_inbeam_longest", "ID", "([A-Za-z0-9]+)", &MainProgram::cmd_path_inbeam_longest, &MainProgram::test_path_inbeam_longest },
     {"total_color", "ID", "([A-Za-z0-9]+)", &MainProgram::cmd_total_color, &MainProgram::test_total_color },
+    {"route_any", "(x1,y1) (x2,y2)",
+     "\\(([0-9]+)[[:space:]]*,[[:space:]]*([0-9]+)\\)[[:space:]]+\\(([0-9]+)[[:space:]]*,[[:space:]]*([0-9]+)\\)", &MainProgram::cmd_route_any, &MainProgram::test_route_any },
+    {"route_fastest", "(x1,y1) (x2,y2)",
+     "\\(([0-9]+)[[:space:]]*,[[:space:]]*([0-9]+)\\)[[:space:]]+\\(([0-9]+)[[:space:]]*,[[:space:]]*([0-9]+)\\)", &MainProgram::cmd_route_fastest, &MainProgram::test_route_fastest },
+    {"route_least_xpoints", "(x1,y1) (x2,y2)",
+     "\\(([0-9]+)[[:space:]]*,[[:space:]]*([0-9]+)\\)[[:space:]]+\\(([0-9]+)[[:space:]]*,[[:space:]]*([0-9]+)\\)", &MainProgram::cmd_route_least_xpoints, &MainProgram::test_route_least_xpoints },
+    {"route_fibre_cycle", "(x1,y1)",
+     "\\(([0-9]+)[[:space:]]*,[[:space:]]*([0-9]+)\\)", &MainProgram::cmd_route_fibre_cycle, &MainProgram::test_route_fibre_cycle },
+    {"trim_fibre_network", "", "", &MainProgram::cmd_trim_fibre_network, &MainProgram::test_trim_fibre_network },
     {"quit", "", "", nullptr, nullptr },
     {"help", "", "", &MainProgram::help_command, nullptr },
     {"read", "\"in-filename\"",
@@ -888,7 +1251,7 @@ MainProgram::CmdResult MainProgram::cmd_perftest(ostream& output, MatchIter begi
         output << setw(7) << n << " , " << flush;
 
         ds_.clear_beacons();
-//        ds_.clear_fibres();
+        ds_.clear_fibres();
         init_primes();
 
         Stopwatch stopwatch;
@@ -918,35 +1281,35 @@ MainProgram::CmdResult MainProgram::cmd_perftest(ostream& output, MatchIter begi
 
         add_random_beacons(n % 1000);
 
-//        // Add random fibres
-//        for (unsigned int i = 0; i < n / 1000; ++i)
-//        {
-//            for (unsigned int j=0; j<1000/15; ++j)
-//            {
-//                test_random_fibres();
-//            }
+        // Add random fibres
+        for (unsigned int i = 0; i < n / 1000; ++i)
+        {
+            for (unsigned int j=0; j<1000/15; ++j)
+            {
+                test_random_fibres();
+            }
 
-//            stopwatch.stop();
-//            if (stopwatch.elapsed() >= timeout)
-//            {
-//                output << "Timeout!" << endl;
-//                stop = true;
-//                break;
-//            }
-//            if (check_stop())
-//            {
-//                output << "Stopped!" << endl;
-//                stop = true;
-//                break;
-//            }
-//            stopwatch.start();
-//        }
+            stopwatch.stop();
+            if (stopwatch.elapsed() >= timeout)
+            {
+                output << "Timeout!" << endl;
+                stop = true;
+                break;
+            }
+            if (check_stop())
+            {
+                output << "Stopped!" << endl;
+                stop = true;
+                break;
+            }
+            stopwatch.start();
+        }
         if (stop) { break; }
 
-//        for (unsigned int j=0; j< (n % 1000)/15; ++j)
-//        {
-//            test_random_fibres();
-//        }
+        for (unsigned int j=0; j< (n % 1000)/15; ++j)
+        {
+            test_random_fibres();
+        }
 
         auto addsec = stopwatch.elapsed();
         output << setw(12) << addsec << " , " << flush;
@@ -1000,7 +1363,7 @@ MainProgram::CmdResult MainProgram::cmd_perftest(ostream& output, MatchIter begi
     }
 
     ds_.clear_beacons();
-//    ds_.clear_fibres();
+    ds_.clear_fibres();
     init_primes();
 
 #ifdef _GLIBCXX_DEBUG
@@ -1364,7 +1727,7 @@ int MainProgram::mainprogram(int argc, char* argv[])
 
     MainProgram mainprg;
 
-    if (args.size() == 2)
+    if (args.size() == 2 && args[1] != "--console")
     {
         string filename = args[1];
         ifstream input(filename);
@@ -1422,4 +1785,225 @@ std::string MainProgram::n_to_id(unsigned long n)
     }
 
     return name;
+}
+
+void MainProgram::create_fibre_labyrinth(std::ostream& output, int xsize, int ysize, int extrafibres)
+{
+    // Clear existing fibres
+    ds_.clear_fibres();
+
+    // Vector to collect all connections
+    vector<XpointInfo> xpoints(xsize*ysize);
+
+    // Add random fibre network
+    // false = fibre, true = no connection
+    vector<bool> fibres(xsize*ysize*ENDDIR);
+
+    vector<long int> tset(xsize*ysize, -1);
+    auto fibrenum = fibres.size();
+    while (fibrenum > 0)
+    {
+        // Find a random fibre
+        auto fibreiter =  random(fibres.begin(), fibres.end());
+        fibreiter = find(fibreiter, fibres.end(), false); // Find next fibre
+        if (fibreiter == fibres.end())
+        {
+            fibreiter = find(fibres.begin(), fibres.end(), false); // Find from beginning
+        }
+        assert(fibreiter != fibres.end() && "Run out of fibres!");
+        *fibreiter = true; // Remove fibre
+
+        // Calculate fibre coordinates and direction
+        auto fibreidx = fibreiter - fibres.begin();
+        auto [x1, rest] = div(fibreidx, static_cast<decltype(fibreidx)>(ysize*ENDDIR));
+        auto [y1, dir] = div(rest, static_cast<decltype(fibreidx)>(ENDDIR));
+
+        // Find the next coordinate
+        auto [x2, y2] = move_to_dir({static_cast<int>(x1), static_cast<int>(y1)}, static_cast<Dir>(dir));
+        if (x2 < 0 || y2 < 0 || x2 >= xsize || y2 >= ysize) { continue; } // If out of labyrinth area
+
+        auto i1 = x1*ysize + y1;
+        auto i2 = x2*ysize + y2;
+
+        auto s1 = i1;
+        while (tset[s1] >= 0) { s1 = tset[s1]; }
+        auto s2 = i2;
+        while (tset[s2] >= 0) { s2 = tset[s2]; }
+        if (s1 == s2) { continue; } // Already connected
+        tset[s2] += tset[s1];
+        tset[s1] = s2;
+
+        xpoints[x1*ysize + y1].dirs[dir] = true;
+        xpoints[x2*ysize + y2].dirs[invert_dir[dir]] = true;
+        if (tset[s2] == -static_cast<long int>(xsize*ysize)) { break; }
+    }
+
+    // Add extra connections
+    for (int i=0; i<extrafibres; ++i)
+    {
+        auto x1 = random(0, xsize);
+        auto y1 = random(0, ysize);
+        auto dir = random(0, static_cast<int>(ENDDIR));
+        auto [x2, y2] = move_to_dir({x1, y1}, static_cast<Dir>(dir));
+        if (x2 < 0 || x2 >= xsize || y2 < 0 || y2 >= ysize) { continue; }
+        xpoints[x1*ysize + y1].dirs[dir] = true; // New fibre
+        xpoints[x2*ysize + y2].dirs[invert_dir[dir]] = true; // And also in other direction
+    }
+
+    // Add fibres
+    Coord start{random(0, xsize), random(0, ysize)};
+    vector<Coord> beaconxys;
+    beaconxys.reserve(ds_.beacon_count());
+    for (auto id : ds_.all_beacons()) // Make sure all beacons have a corresponding xpoint
+    {
+        auto [x, y] = ds_.get_coordinates(id);
+        auto x2 = x/2;
+        auto y2 = y/2;
+        if (y % 2 == 0 && x % 2 == y2 % 1)
+        {
+            beaconxys.push_back({x2, y2});
+        }
+    }
+    sort(beaconxys.begin(), beaconxys.end());
+    add_labyrinth_fibres(output, {xsize, ysize}, start, start, ENDDIR, 0, xpoints, beaconxys);
+}
+
+Coord MainProgram::move_to_dir(Coord coord, MainProgram::Dir dir)
+{
+    auto [x2, y2] = coord;
+    switch (dir)
+    {
+        case WEST: { --x2; break; }
+        case EAST: { ++x2; break; }
+        case NORTHWEST: { ++y2; x2 -= (y2 % 2); break; }
+        case NORTHEAST: { x2 += (y2 % 2); ++y2; break; }
+        case SOUTHWEST: { --y2; x2 -= (y2 % 2); break; }
+        case SOUTHEAST: { x2 += (y2 % 2); --y2; break; }
+        default: { assert(!"END as move direction!"); }
+    }
+    return {x2, y2};
+}
+
+void MainProgram::add_labyrinth_fibres(std::ostream& output, Coord size, Coord pos, Coord from, Dir fromdir, Cost fromcost, vector<XpointInfo>& xpoints, vector<Coord> const& beaconxys)
+{
+    Cost const UNITCOST = 2;
+    auto& xpointinfo = xpoints[pos.x*size.y + pos.y];
+    if (fromdir!=ENDDIR && xpointinfo.dirs[fromdir] && xpointinfo.dirs.count() == 2 &&
+            !binary_search(beaconxys.begin(), beaconxys.end(), pos)) // Only connection is to the same direction, and we are not at a beacon
+    {
+        xpointinfo.visited = true; // Visited now
+        add_labyrinth_fibres(output, size, move_to_dir(pos, fromdir), from, fromdir, fromcost+UNITCOST, xpoints, beaconxys); // Continue in the same direction
+    }
+    else
+    {
+        Coord xypos{2*pos.x + (pos.y % 2), 2*pos.y};
+        Coord xyfrom{2*from.x + (from.y % 2), 2*from.y};
+        if (xyfrom < xypos)
+        {
+            ds_.add_fibre(xyfrom, xypos, fromcost+UNITCOST); // Add fibre to here
+            output << "add_fibre (" << xyfrom.x << "," << xyfrom.y << ") (" << xypos.x << "," << xypos.y << ") " << fromcost+UNITCOST << endl;
+        }
+        if (xpointinfo.visited) { return; } // Already visited, no need to scan further
+        xpointinfo.visited = true; // Visited now
+        for (int dir=FIRSTDIR; dir!=ENDDIR; ++dir)
+        {
+            if (xpointinfo.dirs[dir])
+            {
+                auto pos2 = move_to_dir(pos, static_cast<Dir>(dir));
+                add_labyrinth_fibres(output, size, pos2, pos, static_cast<Dir>(dir), 0, xpoints, beaconxys);
+            }
+        }
+    }
+}
+
+void MainProgram::add_random_fibres(std::ostream& output, unsigned int random_fibres)
+{
+    vector<pair<Coord, Coord>> addedfibres;
+    auto beacons = ds_.all_beacons();
+    sort(beacons.begin(), beacons.end()); // Sort beacon IDs to get deterministic results
+
+    // Add given number of totally random fibres
+    for ( ; random_fibres != 0; --random_fibres)
+    {
+        auto i1 = random(beacons.begin(), beacons.end());
+        auto i2 = random(beacons.begin(), beacons.end());
+        auto cost = random(0, 100);
+        if (i1 != i2)
+        {
+            Coord p1 = ds_.get_coordinates(*i1);
+            Coord p2 = ds_.get_coordinates(*i2);
+            bool intersects = false;
+            for (auto const& fibre : addedfibres)
+            {
+                if (doIntersect(p1, p2, fibre.first, fibre.second)) { intersects = true; break; }
+            }
+            if (intersects) { continue; }
+            auto xyfrom = ds_.get_coordinates(*i1);
+            auto xyto = ds_.get_coordinates(*i2);
+            ds_.add_fibre(xyfrom, xyto, cost);
+            output << "add_fibre (" << xyfrom.x << "," << xyfrom.y << ") (" << xyto.x << "," << xyto.y << ") " << cost << endl;
+            addedfibres.push_back({p1, p2});
+        }
+    }
+}
+
+// The functions below are taken and modified from https://www.geeksforgeeks.org/check-if-two-given-line-segments-intersect/
+// point q lies on line segment 'pr'
+bool MainProgram::onSegment(Coord p, Coord q, Coord r)
+{
+    if (q.x <= max(p.x, r.x) && q.x >= min(p.x, r.x) &&
+        q.y <= max(p.y, r.y) && q.y >= min(p.y, r.y))
+       return true;
+
+    return false;
+}
+
+// To find orientation of ordered triplet (p, q, r).
+// The function returns following values
+// 0 --> p, q and r are colinear
+// 1 --> Clockwise
+// 2 --> Counterclockwise
+int MainProgram::orientation(Coord p, Coord q, Coord r)
+{
+    // See https://www.geeksforgeeks.org/orientation-3-ordered-points/
+    // for details of below formula.
+    int val = (q.y - p.y) * (r.x - q.x) -
+              (q.x - p.x) * (r.y - q.y);
+
+    if (val == 0) return 0;  // colinear
+
+    return (val > 0)? 1: 2; // clock or counterclock wise
+}
+
+// The main function that returns true if line segment 'p1q1'
+// and 'p2q2' intersect.
+bool MainProgram::doIntersect(Coord p1, Coord q1, Coord p2, Coord q2)
+{
+    if ((p1 == p2 && q1 == q2) || (p1 == q2 && q1 == p2)) { return true; } // Same line
+    if (p1 == p2 || p1 == q2 || q1 == p2 || q1 == q2) { return false; } // One same point, cannot intersect
+    // Find the four orientations needed for general and
+    // special cases
+    int o1 = orientation(p1, q1, p2);
+    int o2 = orientation(p1, q1, q2);
+    int o3 = orientation(p2, q2, p1);
+    int o4 = orientation(p2, q2, q1);
+
+    // General case
+    if (o1 != o2 && o3 != o4)
+        return true;
+
+    // Special Cases
+    // p1, q1 and p2 are colinear and p2 lies on segment p1q1
+    if (o1 == 0 && onSegment(p1, p2, q1)) return true;
+
+    // p1, q1 and q2 are colinear and q2 lies on segment p1q1
+    if (o2 == 0 && onSegment(p1, q2, q1)) return true;
+
+    // p2, q2 and p1 are colinear and p1 lies on segment p2q2
+    if (o3 == 0 && onSegment(p2, p1, q2)) return true;
+
+     // p2, q2 and q1 are colinear and q1 lies on segment p2q2
+    if (o4 == 0 && onSegment(p2, q1, q2)) return true;
+
+    return false; // Doesn't fall in any of the above cases
 }
