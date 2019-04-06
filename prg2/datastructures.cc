@@ -751,10 +751,20 @@ std::vector<std::pair<Coord, Coord> > Datastructures::all_fibres()
     return {};
 }
 
-bool Datastructures::remove_fibre(Coord /*xpoint1*/, Coord /*xpoint2*/)
+bool Datastructures::remove_fibre(Coord xpoint1, Coord xpoint2)
 {
     // Replace this with your implementation
-    return false;
+    if (find_xconnection(xpoint1, xpoint2))
+    {
+        remove_subfibre(xpoint1, xpoint2);
+        remove_subfibre(xpoint2, xpoint1);
+        return true;
+    }
+    else
+    {
+        return false;
+    }
+
 }
 
 void Datastructures::clear_fibres()
@@ -764,9 +774,9 @@ void Datastructures::clear_fibres()
     std::map<Coord, std::shared_ptr<Xpoint>>::const_iterator db_iterator = XpointDB.begin();
     for(; db_iterator != XpointDB.end(); db_iterator++)
     {
-        std::unordered_set<std::shared_ptr<Edge>> edge_set = db_iterator->second->edges;
-        std::unordered_set<std::shared_ptr<Edge>>::const_iterator set_iterator = edge_set.begin();
-        for(; set_iterator != edge_set.end(); set_iterator++)
+//        std::unordered_set<std::shared_ptr<Edge>> edge_set = db_iterator->second->edges;
+        std::unordered_set<std::shared_ptr<Edge>>::const_iterator set_iterator = db_iterator->second->edges.begin();
+        for(; set_iterator != db_iterator->second->edges.end(); set_iterator++)
         {
             std::shared_ptr<Edge> edge_element = *set_iterator;
             edge_element->target = nullptr;
@@ -815,12 +825,11 @@ bool Datastructures::find_xconnection(Coord xpoint1, Coord xpoint2)
     }
     else
     {
-        std::unordered_set<std::shared_ptr<Edge>> edge_list = XpointDB[xpoint1]->edges;
-        std::unordered_set<std::shared_ptr<Edge>>::iterator db_iterator = edge_list.begin();
-        for (;db_iterator != edge_list.end(); db_iterator++)
+//        std::unordered_set<std::shared_ptr<Edge>> edge_list = XpointDB[xpoint1]->edges;
+        std::unordered_set<std::shared_ptr<Edge>>::iterator db_iterator = XpointDB[xpoint1]->edges.begin();
+        for (;db_iterator != XpointDB[xpoint1]->edges.end(); db_iterator++)
         {
             std::shared_ptr<Edge> edge_element = *db_iterator;
-//            if (edge_element->target->coord == XpointDB[xpoint2]->coord)
             if (operator==(edge_element->target->coord, XpointDB[xpoint2]->coord))
             {
                 return true;
@@ -839,6 +848,20 @@ bool Datastructures::find_xpoint(Coord xpoint)
     else
     {
         return true;
+    }
+}
+
+void Datastructures::remove_subfibre(Coord xpoint1, Coord xpoint2)
+{
+    std::unordered_set<std::shared_ptr<Edge>>::iterator db_iterator = XpointDB[xpoint1]->edges.begin();
+    for (;db_iterator != XpointDB[xpoint1]->edges.end(); db_iterator++)
+    {
+        std::shared_ptr<Edge> edge_element = *db_iterator;
+        if (operator==(edge_element->target->coord, XpointDB[xpoint2]->coord))
+        {
+            XpointDB[xpoint1]->edges.erase(edge_element);
+            return;
+        }
     }
 }
 

@@ -278,6 +278,7 @@ private:
     // phase 2
     bool find_xconnection(Coord xpoint1, Coord xpoint2);
     bool find_xpoint(Coord xpoint);
+    void remove_subfibre(Coord xpoint1, Coord xpoint2);
 
 };
 
