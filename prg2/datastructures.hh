@@ -10,6 +10,7 @@
 #include <unordered_set>
 #include <unordered_map>
 #include <memory>
+#include <map>
 
 // Type for beacon IDs
 using BeaconID = std::string;
@@ -94,16 +95,16 @@ struct Beacon
 
 struct Edge;
 
-struct Node
+struct Xpoint
 {
     Coord coord = NO_COORD;
-    std::unordered_set<Edge*> edges;
+    std::unordered_set<std::shared_ptr<Edge>> edges;
 };
 
 struct Edge
 {
     Cost cost = NO_COST;
-    Node* target = nullptr;
+    std::shared_ptr<Xpoint> target;
 };
 
 // This is the class you are supposed to implement
@@ -250,6 +251,8 @@ public:
     // Short rationale for estimate:
     Cost trim_fibre_network();
 
+    std::map<Coord, std::shared_ptr<Xpoint>> XpointDB;
+
 private:
     // Add stuff needed for your class implementation here
     int no_of_beacon = 0;
@@ -269,7 +272,7 @@ private:
     BeaconID find_root_beacon(std::unordered_set<BeaconID> beacon_set);
 
     // phase 2
-
+    bool find_xconnection(Coord xpoint1, Coord xpoint2);
 
 };
 

@@ -644,10 +644,34 @@ std::vector<Coord> Datastructures::all_xpoints()
     return {};
 }
 
-bool Datastructures::add_fibre(Coord /*xpoint1*/, Coord /*xpoint2*/, Cost /*cost*/)
+bool Datastructures::add_fibre(Coord xpoint1, Coord xpoint2, Cost cost)
 {
     // Replace this with your implementation
-    return false;
+    if (!find_xconnection(xpoint1, xpoint2)){
+        std::shared_ptr<Xpoint> new_xpoint1 = std::make_shared<Xpoint>();
+        std::shared_ptr<Xpoint> new_xpoint2 = std::make_shared<Xpoint>();
+        new_xpoint1->coord = xpoint1;
+        new_xpoint2->coord = xpoint2;
+
+        std::shared_ptr<Edge> new_edge1 = std::make_shared<Edge>();
+        std::shared_ptr<Edge> new_edge2 = std::make_shared<Edge>();
+        new_edge1->target = new_xpoint2;
+        new_edge2->target = new_xpoint1;
+        new_edge1->cost = cost;
+        new_edge2->cost = cost;
+
+        new_xpoint1->edges.insert(new_edge1);
+        new_xpoint2->edges.insert(new_edge2);
+
+        XpointDB[xpoint1] = new_xpoint1;
+        XpointDB[xpoint2] = new_xpoint2;
+
+        return true;
+    }
+    else
+    {
+        return false;
+    }
 }
 
 std::vector<std::pair<Coord, Cost> > Datastructures::get_fibres_from(Coord /*xpoint*/)
@@ -702,3 +726,35 @@ Cost Datastructures::trim_fibre_network()
     // Replace this with your implementation
     return NO_COST;
 }
+
+bool Datastructures::find_xconnection(Coord xpoint1, Coord xpoint2)
+{
+    if (XpointDB.find(xpoint1) == XpointDB.end() || XpointDB.find(xpoint2) == XpointDB.end())
+    {
+        return false;
+    }
+    else
+    {
+        std::unordered_set<std::shared_ptr<Edge>> edge_list = XpointDB[xpoint1]->edges;
+        std::unordered_set<std::shared_ptr<Edge>>::iterator db_iterator = edge_list.begin();
+        for (;db_iterator != XpointDB[xpoint1]->edges.end(); db_iterator++)
+        {
+            if (db_iterator->target == XpointDB[xpoint2])
+            {
+                return true;
+            }
+
+        }
+
+//        std::unordered_set<std::shared_ptr<Edge>>::const_iterator db_iterator = XpointDB[xpoint1]->edges.begin();
+//        for(;db_iterator != XpointDB[xpoint1]->edges.end(); db_iterator++)
+//        {
+//            if (db_iterator    == XpointDB[xpoint2])
+//            {
+//                return true;
+//            }
+//        }
+        return false;
+    }
+}
+
