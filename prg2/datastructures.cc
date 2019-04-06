@@ -20,6 +20,8 @@
 
 #include <QDebug>
 
+#include <set>
+
 std::minstd_rand rand_engine; // Reasonably quick pseudo-random generator
 
 template <typename Type>
@@ -643,7 +645,7 @@ std::vector<Coord> Datastructures::all_xpoints()
     // Replace this with your implementation
     std::vector<Coord> xpoints_vector;
 //            std::unordered_map<Coord, std::shared_ptr<Xpoint>, CoordHash>::const_iterator map_iterator = XpointDB.begin();
-            std::map<Coord, std::shared_ptr<Xpoint>, Compare>::const_iterator map_iterator = XpointDB.begin();
+            std::map<Coord, std::shared_ptr<Xpoint>>::const_iterator map_iterator = XpointDB.begin();
             for(; map_iterator != XpointDB.end(); map_iterator++)
             {
                 xpoints_vector.push_back(map_iterator->first);
@@ -656,10 +658,28 @@ bool Datastructures::add_fibre(Coord xpoint1, Coord xpoint2, Cost cost)
 {
     // Replace this with your implementation
     if (!find_xconnection(xpoint1, xpoint2)){
-        std::shared_ptr<Xpoint> new_xpoint1 = std::make_shared<Xpoint>();
-        std::shared_ptr<Xpoint> new_xpoint2 = std::make_shared<Xpoint>();
-        new_xpoint1->coord = xpoint1;
-        new_xpoint2->coord = xpoint2;
+        std::shared_ptr<Xpoint> new_xpoint1;
+        std::shared_ptr<Xpoint> new_xpoint2;
+
+        if (!find_xpoint(xpoint1))
+        {
+            new_xpoint1 = std::make_shared<Xpoint>();
+            new_xpoint1->coord = xpoint1;
+        }
+        else
+        {
+            new_xpoint1 = XpointDB[xpoint1];
+        }
+
+        if (!find_xpoint(xpoint2))
+        {
+            new_xpoint2 = std::make_shared<Xpoint>();
+            new_xpoint2->coord = xpoint2;
+        }
+        else
+        {
+            new_xpoint2 = XpointDB[xpoint2];
+        }
 
         std::shared_ptr<Edge> new_edge1 = std::make_shared<Edge>();
         std::shared_ptr<Edge> new_edge2 = std::make_shared<Edge>();
@@ -674,13 +694,25 @@ bool Datastructures::add_fibre(Coord xpoint1, Coord xpoint2, Cost cost)
         XpointDB[xpoint1] = new_xpoint1;
         XpointDB[xpoint2] = new_xpoint2;
 
-//        qDebug() << "map list";
-//        std::map<Coord, std::shared_ptr<Xpoint>>::const_iterator map_iterator = XpointDB.begin();
-//        for(; map_iterator != XpointDB.end(); map_iterator++)
-//        {
-//            qDebug() << map_iterator->first.x << map_iterator->first.y;
-//            qDebug() << "---";
-//        }
+        qDebug() << "edge list1";
+        std::unordered_set<std::shared_ptr<Edge>>::const_iterator set_iterator = new_xpoint1->edges.begin();
+        for(; set_iterator != new_xpoint1->edges.end(); set_iterator++)
+        {
+            std::shared_ptr<Edge> edge1 = *set_iterator;
+            qDebug() << edge1->target->coord.x;
+            qDebug() << edge1->target->coord.y;
+            qDebug() << "---";
+        }
+
+        qDebug() << "edge list2";
+        std::unordered_set<std::shared_ptr<Edge>>::const_iterator set_iterator2 = new_xpoint2->edges.begin();
+        for(; set_iterator2 != new_xpoint2->edges.end(); set_iterator2++)
+        {
+            std::shared_ptr<Edge> edge2 = *set_iterator2;
+            qDebug() << edge2->target->coord.x;
+            qDebug() << edge2->target->coord.y;
+            qDebug() << "---";
+        }
 
         return true;
     }
@@ -690,10 +722,27 @@ bool Datastructures::add_fibre(Coord xpoint1, Coord xpoint2, Cost cost)
     }
 }
 
-std::vector<std::pair<Coord, Cost> > Datastructures::get_fibres_from(Coord /*xpoint*/)
+std::vector<std::pair<Coord, Cost> > Datastructures::get_fibres_from(Coord xpoint)
 {
     // Replace this with your implementation
-    return {};
+    if (find_xpoint(xpoint))
+    {
+        std::vector<std::pair<Coord, Cost>> edge_vector;
+        std::shared_ptr<Xpoint> xnode = XpointDB[xpoint];
+        std::unordered_set<std::shared_ptr<Edge>> edge_set = xnode->edges;
+        std::unordered_set<std::shared_ptr<Edge>>::const_iterator set_iterator = edge_set.begin();
+        for(; set_iterator != edge_set.end(); set_iterator++)
+        {
+            std::shared_ptr<Edge> edge1 = *set_iterator;
+            edge_vector.push_back(std::make_pair(edge1->target->coord, edge1->cost));
+        }
+        sort(edge_vector.begin(),edge_vector.end());
+        return edge_vector;
+    }
+    else
+    {
+        return {};
+    }
 }
 
 std::vector<std::pair<Coord, Coord> > Datastructures::all_fibres()
@@ -712,7 +761,7 @@ void Datastructures::clear_fibres()
 {
     // Replace this with your implementation
 //    std::unordered_map<Coord, std::shared_ptr<Xpoint>, CoordHash>::const_iterator db_iterator = XpointDB.begin();
-    std::map<Coord, std::shared_ptr<Xpoint>, Compare>::const_iterator db_iterator = XpointDB.begin();
+    std::map<Coord, std::shared_ptr<Xpoint>>::const_iterator db_iterator = XpointDB.begin();
     for(; db_iterator != XpointDB.end(); db_iterator++)
     {
         std::unordered_set<std::shared_ptr<Edge>> edge_set = db_iterator->second->edges;
