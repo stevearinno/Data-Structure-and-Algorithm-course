@@ -92,6 +92,19 @@ struct Beacon
     int no_of_parents = 0;
 };
 
+struct Edge;
+
+struct Node
+{
+    Coord coord = NO_COORD;
+    std::unordered_set<Edge*> edges;
+};
+
+struct Edge
+{
+    Cost cost = NO_COST;
+    Node* target = nullptr;
+};
 
 // This is the class you are supposed to implement
 
@@ -254,6 +267,9 @@ private:
     void update_total_color(BeaconID id);
     void modify_total_color(BeaconID id, Color new_color, Color old_color = NO_COLOR);
     BeaconID find_root_beacon(std::unordered_set<BeaconID> beacon_set);
+
+    // phase 2
+
 
 };
 
