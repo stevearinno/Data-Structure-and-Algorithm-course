@@ -60,15 +60,15 @@ inline bool operator<(Coord c1, Coord c2)
     else { return c1.x < c2.x; }
 }
 
-struct Compare
-{
-    bool operator()(Coord c1, Coord c2) const
-    {
-        if (c1.y < c2.y) { return true; }
-        else if (c2.y < c1.y) { return false; }
-        else { return c1.x < c2.x; }
-    }
-};
+//struct Compare
+//{
+//    bool operator()(Coord c1, Coord c2) const
+//    {
+//        if (c1.y < c2.y) { return true; }
+//        else if (c2.y < c1.y) { return false; }
+//        else { return c1.x < c2.x; }
+//    }
+//};
 
 // Return value for cases where coordinates were not found
 Coord const NO_COORD = {NO_VALUE, NO_VALUE};
