@@ -748,7 +748,43 @@ std::vector<std::pair<Coord, Cost> > Datastructures::get_fibres_from(Coord xpoin
 std::vector<std::pair<Coord, Coord> > Datastructures::all_fibres()
 {
     // Replace this with your implementation
-    return {};
+    if (XpointDB.size()!=0)
+    {
+
+        std::vector<std::pair<Coord, Coord> > fibre_vector;
+        std::map<Coord, std::shared_ptr<Xpoint>>::const_iterator map_iterator = XpointDB.begin();
+        for(; map_iterator != XpointDB.end(); map_iterator++)
+        {
+            std::unordered_set<std::shared_ptr<Edge>>::const_iterator set_iterator = map_iterator->second->edges.begin();
+            for(; set_iterator != map_iterator->second->edges.end(); set_iterator++)
+            {
+                std::shared_ptr<Edge> edge1 = *set_iterator;
+                std::set<Coord, Compare> coord_set;
+//                std::vector<Coord> coord_vector;
+                if (operator<(map_iterator->first, edge1->target->coord))
+                {
+//                    fibre_vector.push_back(std::make_pair(map_iterator->first, edge1->target->coord));
+                    coord_set.insert(edge1->target->coord);
+//                    coord_vector.push_back(edge1->target->coord);
+                }
+//                sort(coord_vector.begin(), coord_vector.end(), Compare);
+//                for(unsigned int index = 0; index < coord_vector.size(); index++)
+//                {
+//                    fibre_vector.push_back(std::make_pair(map_iterator->first, coord_vector[index]));
+//                }
+                std::set<Coord, Compare>::const_iterator coord_iterator = coord_set.begin();
+                for(; coord_iterator != coord_set.end(); coord_iterator++)
+                {
+                    fibre_vector.push_back(std::make_pair(map_iterator->first, *coord_iterator));
+                }
+            }
+        }
+        return fibre_vector;
+    }
+    else
+    {
+        return {};
+    }
 }
 
 bool Datastructures::remove_fibre(Coord xpoint1, Coord xpoint2)
@@ -864,4 +900,5 @@ void Datastructures::remove_subfibre(Coord xpoint1, Coord xpoint2)
         }
     }
 }
+
 
