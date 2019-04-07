@@ -815,21 +815,50 @@ void Datastructures::clear_fibres()
 
 }
 
-std::vector<std::pair<Coord, Cost> > Datastructures::route_any(Coord /*fromxpoint*/, Coord /*toxpoint*/)
+std::vector<std::pair<Coord, Cost> > Datastructures::route_any(Coord fromxpoint, Coord toxpoint)
 {
     // Replace this with your implementation
+    std::shared_ptr<Xpoint> origin_pt = XpointDB[fromxpoint];
+    std::shared_ptr<Xpoint> destination_pt = XpointDB[toxpoint];
+
+    if (origin_pt == destination_pt)
+    {
+        return {std::make_pair(origin_pt->coord, 0)};
+    }
+    else
+    {
+        if (find_any_path(origin_pt, destination_pt))
+        {
+            return final_path(origin_pt, destination_pt);
+        }
+    }
+
     return {};
 }
 
-std::vector<std::pair<Coord, Cost>> Datastructures::route_least_xpoints(Coord /*fromxpoint*/, Coord /*toxpoint*/)
+std::vector<std::pair<Coord, Cost>> Datastructures::route_least_xpoints(Coord fromxpoint, Coord toxpoint)
 {
     // Replace this with your implementation
+    std::shared_ptr<Xpoint> origin_pt = XpointDB[fromxpoint];
+    std::shared_ptr<Xpoint> destination_pt = XpointDB[toxpoint];
+
+    if (origin_pt == destination_pt)
+    {
+        return {std::make_pair(origin_pt->coord, 0)};
+    }
+    else
+    {
+        if (find_any_path(origin_pt, destination_pt))
+        {
+            return final_path(origin_pt, destination_pt);
+        }
+    }
     return {};
 }
 
 std::vector<std::pair<Coord, Cost>> Datastructures::route_fastest(Coord /*fromxpoint*/, Coord /*toxpoint*/)
 {
-    // Replace this with your implementation
+    // Replace this with your implementation    
     return {};
 }
 
@@ -891,6 +920,54 @@ void Datastructures::remove_subfibre(Coord xpoint1, Coord xpoint2)
             return;
         }
     }
+}
+
+bool Datastructures::find_any_path(std::shared_ptr<Xpoint> origin_pt, std::shared_ptr<Xpoint> destination_pt)
+{
+    std::queue<std::shared_ptr<Xpoint>> todo;
+    origin_pt->dist = 0;
+    todo.push(origin_pt);
+    while (!todo.empty()){
+        std::shared_ptr<Xpoint> current_pt = todo.front();
+        todo.pop();
+        std::unordered_set<std::shared_ptr<Edge>>::const_iterator set_iterator = current_pt->edges.begin();
+        for(; set_iterator != current_pt->edges.end(); set_iterator++)
+        {
+            std::shared_ptr<Edge> current_eg = *set_iterator;
+            std::shared_ptr<Xpoint> next_pt = current_eg->target;
+            if ((next_pt->dist == -1) && (!next_pt->isProcessed))
+            {
+                next_pt->dist = current_pt->dist + current_eg->cost;
+                next_pt->prev = current_pt;
+                if (next_pt == destination_pt)
+                {
+                    return true;
+                }
+                todo.push(next_pt);
+            }
+        }
+        current_pt->isProcessed = true;
+    }
+    return false;
+}
+
+std::vector<std::pair<Coord, Cost> > Datastructures::final_path(std::shared_ptr<Xpoint> origin_pt, std::shared_ptr<Xpoint> destination_pt)
+{
+    std::vector<std::pair<Coord, Cost>> route_vector;
+    std::shared_ptr<Xpoint> current_pt = destination_pt;
+    route_vector.insert(route_vector.begin(), std::make_pair(current_pt->coord, current_pt->dist));
+    current_pt->dist = -1;
+    current_pt->isProcessed = false;
+    while (current_pt != origin_pt)
+    {
+        std::shared_ptr<Xpoint> temp_pt = current_pt;
+        current_pt = temp_pt->prev;
+        temp_pt->prev = nullptr;
+        route_vector.insert(route_vector.begin(), std::make_pair(current_pt->coord, current_pt->dist));
+        current_pt->dist = -1;
+        current_pt->isProcessed = false;
+    }
+    return route_vector;
 }
 
 

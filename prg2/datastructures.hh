@@ -112,6 +112,9 @@ struct Xpoint
 {
     Coord coord = NO_COORD;
     std::unordered_set<std::shared_ptr<Edge>> edges;
+    Cost dist = -1;
+    std::shared_ptr<Xpoint> prev = nullptr;
+    bool isProcessed = false;
 };
 
 struct Edge
@@ -289,6 +292,8 @@ private:
     bool find_xconnection(Coord xpoint1, Coord xpoint2);
     bool find_xpoint(Coord xpoint);
     void remove_subfibre(Coord xpoint1, Coord xpoint2);
+    bool find_any_path(std::shared_ptr<Xpoint> origin_pt, std::shared_ptr<Xpoint> destination_pt);
+    std::vector<std::pair<Coord, Cost>> final_path(std::shared_ptr<Xpoint> origin_pt, std::shared_ptr<Xpoint> destination_pt);
 
 
 };
