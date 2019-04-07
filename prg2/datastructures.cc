@@ -856,9 +856,24 @@ std::vector<std::pair<Coord, Cost>> Datastructures::route_least_xpoints(Coord fr
     return {};
 }
 
-std::vector<std::pair<Coord, Cost>> Datastructures::route_fastest(Coord /*fromxpoint*/, Coord /*toxpoint*/)
+std::vector<std::pair<Coord, Cost>> Datastructures::route_fastest(Coord fromxpoint, Coord toxpoint)
 {
-    // Replace this with your implementation    
+    // Replace this with your implementation
+    std::shared_ptr<Xpoint> origin_pt = XpointDB[fromxpoint];
+    std::shared_ptr<Xpoint> destination_pt = XpointDB[toxpoint];
+
+    if (origin_pt == destination_pt)
+    {
+        return {std::make_pair(origin_pt->coord, 0)};
+    }
+    else
+    {
+        if (find_fastest_path(origin_pt, destination_pt))
+        {
+            return final_path(origin_pt, destination_pt);
+        }
+    }
+
     return {};
 }
 
@@ -949,6 +964,47 @@ bool Datastructures::find_any_path(std::shared_ptr<Xpoint> origin_pt, std::share
         current_pt->isProcessed = true;
     }
     return false;
+}
+
+bool Datastructures::find_fastest_path(std::shared_ptr<Xpoint> origin_pt, std::shared_ptr<Xpoint> destination_pt)
+{
+    typedef std::pair<Cost, std::shared_ptr<Xpoint>> cost_pair;
+    bool isFound = false;
+    std::priority_queue<cost_pair, std::vector<cost_pair>, std::greater<cost_pair>> priority_q;
+    origin_pt->dist = 0;
+    priority_q.push(std::make_pair(0, origin_pt));
+
+    while (!priority_q.empty())
+    {
+        std::shared_ptr<Xpoint> current_pt = priority_q.top().second;
+        priority_q.pop();
+        std::unordered_set<std::shared_ptr<Edge>>::const_iterator set_iterator = current_pt->edges.begin();
+        for(; set_iterator != current_pt->edges.end(); set_iterator++)
+        {
+            std::shared_ptr<Edge> current_eg = *set_iterator;
+            std::shared_ptr<Xpoint> next_pt = current_eg->target;
+            if ((next_pt->dist == -1) && (!next_pt->isProcessed))
+            {
+                if (next_pt == destination_pt)
+                {
+                    isFound = true;
+                }
+                priority_q.push(std::make_pair((current_pt->dist + current_eg->cost), next_pt));
+            }
+            relax(current_pt, next_pt, current_eg->cost);
+        }
+        current_pt->isProcessed = true;
+    }
+    return isFound;
+}
+
+void Datastructures::relax(std::shared_ptr<Xpoint> current_pt, std::shared_ptr<Xpoint> next_pt, Cost cost)
+{
+    if ((next_pt->dist == -1) || (next_pt->dist > (current_pt->dist + cost)))
+    {
+        next_pt->dist = current_pt->dist + cost;
+        next_pt->prev = current_pt;
+    }
 }
 
 std::vector<std::pair<Coord, Cost> > Datastructures::final_path(std::shared_ptr<Xpoint> origin_pt, std::shared_ptr<Xpoint> destination_pt)

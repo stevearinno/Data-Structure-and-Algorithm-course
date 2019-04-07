@@ -293,7 +293,10 @@ private:
     bool find_xpoint(Coord xpoint);
     void remove_subfibre(Coord xpoint1, Coord xpoint2);
     bool find_any_path(std::shared_ptr<Xpoint> origin_pt, std::shared_ptr<Xpoint> destination_pt);
+    bool find_fastest_path(std::shared_ptr<Xpoint> origin_pt, std::shared_ptr<Xpoint> destination_pt);
+    void relax(std::shared_ptr<Xpoint> current_pt, std::shared_ptr<Xpoint> next_pt, Cost cost);
     std::vector<std::pair<Coord, Cost>> final_path(std::shared_ptr<Xpoint> origin_pt, std::shared_ptr<Xpoint> destination_pt);
+
 
 
 };
