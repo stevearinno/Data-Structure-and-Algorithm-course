@@ -993,6 +993,7 @@ bool Datastructures::find_fastest_path(std::shared_ptr<Xpoint> origin_pt, std::s
 {
     typedef std::pair<Cost, std::shared_ptr<Xpoint>> cost_pair;
     bool isFound = false;
+    needUpdate = false;
     std::priority_queue<cost_pair, std::vector<cost_pair>, std::greater<cost_pair>> priority_q;
     origin_pt->dist = 0;
     marked_xpoints.push_back(origin_pt);
@@ -1002,22 +1003,30 @@ bool Datastructures::find_fastest_path(std::shared_ptr<Xpoint> origin_pt, std::s
     {
         std::shared_ptr<Xpoint> current_pt = priority_q.top().second;
         priority_q.pop();
-        std::unordered_set<std::shared_ptr<Edge>>::const_iterator set_iterator = current_pt->edges.begin();
-        for(; set_iterator != current_pt->edges.end(); set_iterator++)
+        if (current_pt->isProcessed == false)
         {
-            std::shared_ptr<Edge> current_eg = *set_iterator;
-            std::shared_ptr<Xpoint> next_pt = current_eg->target;
-            if ((next_pt->dist == -1) && (!next_pt->isProcessed))
+            std::unordered_set<std::shared_ptr<Edge>>::const_iterator set_iterator = current_pt->edges.begin();
+            for(; set_iterator != current_pt->edges.end(); set_iterator++)
             {
-                if (next_pt == destination_pt)
+                std::shared_ptr<Edge> current_eg = *set_iterator;
+                std::shared_ptr<Xpoint> next_pt = current_eg->target;
+                if ((next_pt->dist == -1) && (!next_pt->isProcessed))
                 {
-                    isFound = true;
+                    if (next_pt == destination_pt)
+                    {
+                        isFound = true;
+                    }
+                    priority_q.push(std::make_pair((current_pt->dist + current_eg->cost), next_pt));
                 }
-                priority_q.push(std::make_pair((current_pt->dist + current_eg->cost), next_pt));
+                relax(current_pt, next_pt, current_eg->cost);
+                if (needUpdate)
+                {
+                    priority_q.push(std::make_pair((current_pt->dist + current_eg->cost), next_pt));
+                }
             }
-            relax(current_pt, next_pt, current_eg->cost);
+            current_pt->isProcessed = true;
         }
-        current_pt->isProcessed = true;
+
     }
     return isFound;
 }
@@ -1028,6 +1037,8 @@ void Datastructures::relax(std::shared_ptr<Xpoint> current_pt, std::shared_ptr<X
     {
         next_pt->dist = current_pt->dist + cost;
         next_pt->prev = current_pt;
+        needUpdate = true;
+
         marked_xpoints.push_back(next_pt);
     }
 }

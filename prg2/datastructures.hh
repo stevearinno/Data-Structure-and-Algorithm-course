@@ -300,6 +300,7 @@ private:
     std::vector<Coord> cycle_path(std::shared_ptr<Xpoint> origin_pt, std::shared_ptr<Xpoint> destination_pt);
 
     std::vector<std::shared_ptr<Xpoint>> marked_xpoints;
+    bool needUpdate;
     void reset_marked_xpoints();
 
 
