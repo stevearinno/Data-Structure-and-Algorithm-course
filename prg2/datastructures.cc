@@ -22,6 +22,8 @@
 
 #include <set>
 
+#include <stack>
+
 std::minstd_rand rand_engine; // Reasonably quick pseudo-random generator
 
 template <typename Type>
@@ -825,15 +827,15 @@ std::vector<std::pair<Coord, Cost> > Datastructures::route_any(Coord fromxpoint,
     {
         return {std::make_pair(origin_pt->coord, 0)};
     }
+    else if (find_any_path(origin_pt, destination_pt))
+    {
+        qDebug() << "masuk pak Eko!";
+        return final_path(origin_pt, destination_pt);
+    }
     else
     {
-        if (find_any_path(origin_pt, destination_pt))
-        {
-            return final_path(origin_pt, destination_pt);
-        }
+        return {};
     }
-
-    return {};
 }
 
 std::vector<std::pair<Coord, Cost>> Datastructures::route_least_xpoints(Coord fromxpoint, Coord toxpoint)
@@ -877,10 +879,28 @@ std::vector<std::pair<Coord, Cost>> Datastructures::route_fastest(Coord fromxpoi
     return {};
 }
 
-std::vector<Coord> Datastructures::route_fibre_cycle(Coord /*startxpoint*/)
+std::vector<Coord> Datastructures::route_fibre_cycle(Coord startxpoint)
 {
     // Replace this with your implementation
-    return {};
+    std::shared_ptr<Xpoint> origin_pt = XpointDB[startxpoint];
+    std::pair<std::shared_ptr<Xpoint>, std::shared_ptr<Xpoint>> pair_pt = find_cycle(origin_pt);
+//    qDebug() << pair_pt.first->coord.x;
+//    qDebug() << pair_pt.first->coord.y;
+//    qDebug() << "---";
+//    qDebug() << pair_pt.second->coord.x;
+//    qDebug() << pair_pt.second->coord.y;
+//    bool kondisi = find_any_path(pair_pt.first, pair_pt.second);
+//    std::vector<Coord> test_vector = cycle_path(origin_pt, last_pt);
+//    std::vector<std::pair<Coord, Cost> > test2_vector = final_path(origin_pt, last_pt);
+
+    if ((pair_pt.first != nullptr) && (pair_pt.second != nullptr))
+    {
+        return cycle_path(pair_pt.first, pair_pt.second);
+    }
+    else
+    {
+        return {};
+    }
 }
 
 Cost Datastructures::trim_fibre_network()
@@ -941,7 +961,8 @@ bool Datastructures::find_any_path(std::shared_ptr<Xpoint> origin_pt, std::share
 {
     std::queue<std::shared_ptr<Xpoint>> todo;
     origin_pt->dist = 0;
-    todo.push(origin_pt);
+    marked_xpoints.push_back(origin_pt);
+    todo.push(origin_pt);    
     while (!todo.empty()){
         std::shared_ptr<Xpoint> current_pt = todo.front();
         todo.pop();
@@ -954,6 +975,7 @@ bool Datastructures::find_any_path(std::shared_ptr<Xpoint> origin_pt, std::share
             {
                 next_pt->dist = current_pt->dist + current_eg->cost;
                 next_pt->prev = current_pt;
+                marked_xpoints.push_back(next_pt);
                 if (next_pt == destination_pt)
                 {
                     return true;
@@ -963,6 +985,7 @@ bool Datastructures::find_any_path(std::shared_ptr<Xpoint> origin_pt, std::share
         }
         current_pt->isProcessed = true;
     }
+    reset_marked_xpoints();
     return false;
 }
 
@@ -972,6 +995,7 @@ bool Datastructures::find_fastest_path(std::shared_ptr<Xpoint> origin_pt, std::s
     bool isFound = false;
     std::priority_queue<cost_pair, std::vector<cost_pair>, std::greater<cost_pair>> priority_q;
     origin_pt->dist = 0;
+    marked_xpoints.push_back(origin_pt);
     priority_q.push(std::make_pair(0, origin_pt));
 
     while (!priority_q.empty())
@@ -1004,7 +1028,69 @@ void Datastructures::relax(std::shared_ptr<Xpoint> current_pt, std::shared_ptr<X
     {
         next_pt->dist = current_pt->dist + cost;
         next_pt->prev = current_pt;
+        marked_xpoints.push_back(next_pt);
     }
+}
+
+std::pair<std::shared_ptr<Xpoint>, std::shared_ptr<Xpoint>> Datastructures::find_cycle(std::shared_ptr<Xpoint> origin_pt)
+{
+    std::stack<std::shared_ptr<Xpoint>> xpoint_stack;
+
+    xpoint_stack.push(origin_pt);
+    while (!xpoint_stack.empty())
+    {
+        std::shared_ptr<Xpoint> current_pt = xpoint_stack.top();
+        xpoint_stack.pop();
+        if ((current_pt->dist == -1) && (!current_pt->isProcessed))
+        {
+            current_pt->dist = 0;
+            marked_xpoints.push_back(current_pt);
+            xpoint_stack.push(current_pt);
+            std::unordered_set<std::shared_ptr<Edge>>::const_iterator set_iterator = current_pt->edges.begin();
+            for(; set_iterator != current_pt->edges.end(); set_iterator++)
+            {
+                std::shared_ptr<Edge> current_eg = *set_iterator;
+                std::shared_ptr<Xpoint> next_pt = current_eg->target;
+
+                if ((next_pt->dist == -1) && (!next_pt->isProcessed))
+                {
+                    xpoint_stack.push(next_pt);
+                    next_pt->prev = current_pt;
+                    marked_xpoints.push_back(next_pt);
+//                    qDebug() << "white pt";
+//                    qDebug() << current_pt->coord.x;
+//                    qDebug() << current_pt->coord.y;
+//                    qDebug() << next_pt->coord.x;
+//                    qDebug() << next_pt->coord.y;
+//                    qDebug() << "end white pt";
+                }
+//                qDebug() << "general (next_pt)";
+//                qDebug() << next_pt->coord.x;
+//                qDebug() << next_pt->coord.y;
+//                qDebug() << next_pt->dist;
+//                qDebug() << next_pt->isProcessed;
+//                qDebug() << "end general";
+                if ((next_pt->dist == 0) && (!next_pt->isProcessed)&& (next_pt != current_pt->prev))
+                    //  && (next_pt != current_pt->prev)
+                {
+                    // this is what we are looking for
+                    qDebug() << current_pt->coord.x;
+                    qDebug() << current_pt->coord.y;
+                    qDebug() << next_pt->coord.x;
+                    qDebug() << next_pt->coord.y;
+                    return std::make_pair(next_pt, current_pt);
+                }
+            }
+        }
+        else
+        {
+            current_pt->isProcessed = true;
+            marked_xpoints.push_back(current_pt);
+        }
+
+    }
+    reset_marked_xpoints();
+    return {nullptr, nullptr};
 }
 
 std::vector<std::pair<Coord, Cost> > Datastructures::final_path(std::shared_ptr<Xpoint> origin_pt, std::shared_ptr<Xpoint> destination_pt)
@@ -1023,7 +1109,42 @@ std::vector<std::pair<Coord, Cost> > Datastructures::final_path(std::shared_ptr<
         current_pt->dist = -1;
         current_pt->isProcessed = false;
     }
+    reset_marked_xpoints();
     return route_vector;
+}
+
+std::vector<Coord > Datastructures::cycle_path(std::shared_ptr<Xpoint> origin_pt, std::shared_ptr<Xpoint> destination_pt)
+{
+    std::vector<Coord> coord_vector;
+    std::shared_ptr<Xpoint> current_pt = destination_pt;
+    coord_vector.insert(coord_vector.begin(), origin_pt->coord);
+    coord_vector.insert(coord_vector.begin(), current_pt->coord);
+    current_pt->dist = -1;
+    current_pt->isProcessed = false;
+    while (current_pt != origin_pt)
+    {
+        std::shared_ptr<Xpoint> temp_pt = current_pt;
+        current_pt = temp_pt->prev;
+        temp_pt->prev = nullptr;
+        coord_vector.insert(coord_vector.begin(), current_pt->coord);
+        current_pt->dist = -1;
+        current_pt->isProcessed = false;
+    }
+    reset_marked_xpoints();
+    return coord_vector;
+}
+
+void Datastructures::reset_marked_xpoints()
+{
+    std::vector<std::shared_ptr<Xpoint>>::const_iterator vector_iterator = marked_xpoints.begin();
+    for(; vector_iterator != marked_xpoints.end(); vector_iterator++)
+    {
+        std::shared_ptr<Xpoint> current_xpoint = *vector_iterator;
+        current_xpoint->dist = -1;
+        current_xpoint->prev = nullptr;
+        current_xpoint->isProcessed = false;
+    }
+    marked_xpoints.clear();
 }
 
 

@@ -295,7 +295,12 @@ private:
     bool find_any_path(std::shared_ptr<Xpoint> origin_pt, std::shared_ptr<Xpoint> destination_pt);
     bool find_fastest_path(std::shared_ptr<Xpoint> origin_pt, std::shared_ptr<Xpoint> destination_pt);
     void relax(std::shared_ptr<Xpoint> current_pt, std::shared_ptr<Xpoint> next_pt, Cost cost);
+    std::pair<std::shared_ptr<Xpoint>, std::shared_ptr<Xpoint>> find_cycle(std::shared_ptr<Xpoint> origin_pt);
     std::vector<std::pair<Coord, Cost>> final_path(std::shared_ptr<Xpoint> origin_pt, std::shared_ptr<Xpoint> destination_pt);
+    std::vector<Coord> cycle_path(std::shared_ptr<Xpoint> origin_pt, std::shared_ptr<Xpoint> destination_pt);
+
+    std::vector<std::shared_ptr<Xpoint>> marked_xpoints;
+    void reset_marked_xpoints();
 
 
 
