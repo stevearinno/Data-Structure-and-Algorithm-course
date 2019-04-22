@@ -115,6 +115,7 @@ struct Xpoint
     Cost dist = -1;
     std::shared_ptr<Xpoint> prev = nullptr;
     bool isProcessed = false;
+    bool isTrimmed = false;
 };
 
 struct Edge
@@ -303,7 +304,10 @@ private:
     bool needUpdate;
     void reset_marked_xpoints();
 
-
+    void recursive_update_dist(std::shared_ptr<Xpoint> origin_pt, std::vector<std::shared_ptr<Xpoint>> destination_vec);
+    void final_path2(std::shared_ptr<Xpoint> origin_pt, std::shared_ptr<Xpoint> destination_pt);
+    std::vector<std::pair<Coord, Coord>> valid_fibres;
+    Cost fibre_cost(std::pair<Coord, Coord> fibre_pair);
 
 };
 

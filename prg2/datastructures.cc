@@ -906,7 +906,39 @@ std::vector<Coord> Datastructures::route_fibre_cycle(Coord startxpoint)
 Cost Datastructures::trim_fibre_network()
 {
     // Replace this with your implementation
-    return NO_COST;
+    std::vector<Coord> xpoints_vec = all_xpoints();
+    std::vector<std::pair<Coord, Coord>> fibres_vec = all_fibres();
+    std::vector<std::shared_ptr<Xpoint>> xpoints_pts;
+
+    int vec_size = xpoints_vec.size();
+    for(int index = 0; index<vec_size; index++)
+    {
+        xpoints_pts.push_back(XpointDB[xpoints_vec[index]]);
+    }
+
+    std::vector<std::shared_ptr<Xpoint>> destination_vec(xpoints_pts.begin()+1,
+                                                         xpoints_pts.end());
+    recursive_update_dist(xpoints_pts[0], destination_vec);
+
+    int fibres_size = fibres_vec.size();
+    for(int index = 0; index<fibres_size; index++)
+    {
+        if (std::find(valid_fibres.begin(), valid_fibres.end(),
+                      fibres_vec[index]) == valid_fibres.end())
+        {
+            remove_fibre(fibres_vec[index].first, fibres_vec[index].second);
+        }
+    }
+
+    std::vector<std::pair<Coord, Coord>> new_fibres_vec = all_fibres();
+    int new_vec_size = new_fibres_vec.size();
+    int total_cost = 0;
+    for(int index = 0; index<new_vec_size; index++)
+    {
+        total_cost = total_cost + fibre_cost(new_fibres_vec[index]);
+    }
+
+    return total_cost;
 }
 
 bool Datastructures::find_xconnection(Coord xpoint1, Coord xpoint2)
@@ -1037,9 +1069,10 @@ void Datastructures::relax(std::shared_ptr<Xpoint> current_pt, std::shared_ptr<X
     {
         next_pt->dist = current_pt->dist + cost;
         next_pt->prev = current_pt;
+//        next_pt->isTrimmed = true;
         needUpdate = true;
 
-        marked_xpoints.push_back(next_pt);
+        marked_xpoints.push_back(next_pt);        
     }
 }
 
@@ -1154,8 +1187,116 @@ void Datastructures::reset_marked_xpoints()
         current_xpoint->dist = -1;
         current_xpoint->prev = nullptr;
         current_xpoint->isProcessed = false;
+        current_xpoint->isTrimmed = false;
     }
     marked_xpoints.clear();
 }
 
+void Datastructures::recursive_update_dist(std::shared_ptr<Xpoint> origin_pt, std::vector<std::shared_ptr<Xpoint> > destination_vec)
+{
+    int vec_size = destination_vec.size();
+    for(int index = 0; index < vec_size; index++)
+    {
+        find_fastest_path(origin_pt, destination_vec[index]);
+        qDebug() << "Done here1";
+        final_path2(origin_pt, destination_vec[index]);
+        qDebug() << "Done here2";
+    }
 
+    if (vec_size > 1)
+    {
+        std::vector<std::shared_ptr<Xpoint>> new_dest_vec(destination_vec.begin()+1, destination_vec.end());
+        recursive_update_dist(destination_vec[0], new_dest_vec);
+    }
+    else
+    {
+        return;
+    }
+}
+
+void Datastructures::final_path2(std::shared_ptr<Xpoint> origin_pt, std::shared_ptr<Xpoint> destination_pt)
+{
+    std::set<std::pair<Coord, Coord>> fibre_set;
+    qDebug() << "satu";
+    std::shared_ptr<Xpoint> current_pt = destination_pt;
+
+    if (current_pt->prev != nullptr)
+    {
+        qDebug() << "dua";
+        Coord coord3 = current_pt->coord;
+        qDebug() << "tiga";
+        Coord coord4 = current_pt->prev->coord;
+        qDebug() << "dari";
+        qDebug() << coord3.x;
+        qDebug() << coord3.y;
+        qDebug() << "ke";
+        qDebug() << coord4.x;
+        qDebug() << coord4.y;
+        qDebug() << "selesai";
+        if (operator<(coord3, coord4))
+        {
+            fibre_set.insert(std::make_pair(coord3, coord4));
+        }
+        else
+        {
+            fibre_set.insert(std::make_pair(coord4, coord3));
+        }
+    }
+
+    current_pt->dist = -1;
+    current_pt->isProcessed = false;
+    while ((current_pt != origin_pt) && (current_pt->prev != nullptr))
+    {
+        std::shared_ptr<Xpoint> temp_pt = current_pt;
+        current_pt = temp_pt->prev;
+        temp_pt->prev = nullptr;
+        std::shared_ptr<Xpoint> test_ptr = current_pt->prev;
+        if (current_pt->prev != nullptr)
+        {
+            Coord coord1 = current_pt->coord;
+            Coord coord2 = current_pt->prev->coord;
+//            qDebug() << "dari";
+//            qDebug() << coord1.x;
+//            qDebug() << coord1.y;
+//            qDebug() << "ke";
+//            qDebug() << coord2.x;
+//            qDebug() << coord2.y;
+//            qDebug() << "selesai";
+            if (operator<(coord1, coord2))
+            {
+                fibre_set.insert(std::make_pair(coord1, coord2));
+            }
+            else
+            {
+                fibre_set.insert(std::make_pair(coord2, coord1));
+            }
+        }
+        current_pt->dist = -1;
+        current_pt->isProcessed = false;
+    }
+    std::set<std::pair<Coord, Coord>>::const_iterator set_iterator = fibre_set.begin();
+    for (; set_iterator != fibre_set.end(); set_iterator++)
+    {
+        valid_fibres.push_back(*set_iterator);
+    }
+    reset_marked_xpoints();
+}
+
+Cost Datastructures::fibre_cost(std::pair<Coord, Coord> fibre_pair)
+{
+    std::shared_ptr<Xpoint> xpoint1 = XpointDB[fibre_pair.first];
+    std::shared_ptr<Xpoint> xpoint2 = XpointDB[fibre_pair.second];
+
+//    std::unordered_set<std::shared_ptr<Edge>> edges_set = xpoint1->edges;
+    std::unordered_set<std::shared_ptr<Edge>>::const_iterator set_iterator =
+            xpoint1->edges.begin();
+    for (; set_iterator != xpoint1->edges.end(); set_iterator++)
+    {
+        std::shared_ptr<Edge> edge_target = *set_iterator;
+        std::shared_ptr<Xpoint> xtarget = edge_target->target;
+        if (xtarget == xpoint2)
+        {
+            return edge_target->cost;
+        }
+    }
+}
