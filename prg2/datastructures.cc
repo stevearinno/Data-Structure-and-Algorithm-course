@@ -802,74 +802,106 @@ void Datastructures::clear_fibres()
 std::vector<std::pair<Coord, Cost> > Datastructures::route_any(Coord fromxpoint, Coord toxpoint)
 {
     // Replace this with your implementation
-    std::shared_ptr<Xpoint> origin_pt = XpointDB[fromxpoint];
-    std::shared_ptr<Xpoint> destination_pt = XpointDB[toxpoint];
-
-    if (operator==(fromxpoint, toxpoint))
+    if (find_xpoint(fromxpoint)&&find_xpoint(toxpoint))
     {
-        return {std::make_pair(fromxpoint, 0)};
+        std::shared_ptr<Xpoint> origin_pt = XpointDB[fromxpoint];
+        std::shared_ptr<Xpoint> destination_pt = XpointDB[toxpoint];
 
-    }
-    else if (find_any_path(origin_pt, destination_pt))
-    {
-        return final_path(origin_pt, destination_pt);
+        if (operator==(fromxpoint, toxpoint))
+        {
+            return {std::make_pair(fromxpoint, 0)};
+
+        }
+        else if (find_any_path(origin_pt, destination_pt))
+        {
+            return final_path(origin_pt, destination_pt);
+        }
+        else
+        {
+            return {};
+        }
     }
     else
     {
         return {};
     }
+
 }
 
 std::vector<std::pair<Coord, Cost>> Datastructures::route_least_xpoints(Coord fromxpoint, Coord toxpoint)
 {
     // Replace this with your implementation
-    std::shared_ptr<Xpoint> origin_pt = XpointDB[fromxpoint];
-    std::shared_ptr<Xpoint> destination_pt = XpointDB[toxpoint];
-
-    if (origin_pt == destination_pt)
+    if (find_xpoint(fromxpoint)&&find_xpoint(toxpoint))
     {
-        return {std::make_pair(origin_pt->coord, 0)};
+        std::shared_ptr<Xpoint> origin_pt = XpointDB[fromxpoint];
+        std::shared_ptr<Xpoint> destination_pt = XpointDB[toxpoint];
+
+        if (origin_pt == destination_pt)
+        {
+            return {std::make_pair(origin_pt->coord, 0)};
+        }
+        else
+        {
+            if (find_any_path(origin_pt, destination_pt))
+            {
+                return final_path(origin_pt, destination_pt);
+            }
+        }
+        return {};
     }
     else
     {
-        if (find_any_path(origin_pt, destination_pt))
-        {
-            return final_path(origin_pt, destination_pt);
-        }
+        return{};
     }
-    return {};
+
 }
 
 std::vector<std::pair<Coord, Cost>> Datastructures::route_fastest(Coord fromxpoint, Coord toxpoint)
 {
     // Replace this with your implementation
-    std::shared_ptr<Xpoint> origin_pt = XpointDB[fromxpoint];
-    std::shared_ptr<Xpoint> destination_pt = XpointDB[toxpoint];
-
-    if (origin_pt == destination_pt)
+    if (find_xpoint(fromxpoint)&&find_xpoint(toxpoint))
     {
-        return {std::make_pair(origin_pt->coord, 0)};
+        std::shared_ptr<Xpoint> origin_pt = XpointDB[fromxpoint];
+        std::shared_ptr<Xpoint> destination_pt = XpointDB[toxpoint];
+
+        if (origin_pt == destination_pt)
+        {
+            return {std::make_pair(origin_pt->coord, 0)};
+        }
+        else
+        {
+            if (find_fastest_path(origin_pt, destination_pt))
+            {
+                return final_path(origin_pt, destination_pt);
+            }
+        }
+
+        return {};
     }
     else
     {
-        if (find_fastest_path(origin_pt, destination_pt))
-        {
-            return final_path(origin_pt, destination_pt);
-        }
+        return {};
     }
 
-    return {};
+
 }
 
 std::vector<Coord> Datastructures::route_fibre_cycle(Coord startxpoint)
 {
     // Replace this with your implementation
-    std::shared_ptr<Xpoint> origin_pt = XpointDB[startxpoint];
-    std::pair<std::shared_ptr<Xpoint>, std::shared_ptr<Xpoint>> pair_pt = find_cycle(origin_pt);
-
-    if ((pair_pt.first != nullptr) && (pair_pt.second != nullptr))
+    if (find_xpoint(startxpoint))
     {
-        return cycle_path(pair_pt.first, pair_pt.second);
+        std::shared_ptr<Xpoint> origin_pt = XpointDB[startxpoint];
+        std::pair<std::shared_ptr<Xpoint>, std::shared_ptr<Xpoint>> pair_pt = find_cycle(origin_pt);
+
+        if ((pair_pt.first != nullptr) && (pair_pt.second != nullptr))
+        {
+            return cycle_path(pair_pt.first, pair_pt.second);
+        }
+        else
+        {
+            return {};
+        }
     }
     else
     {
