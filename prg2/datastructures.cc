@@ -1118,7 +1118,6 @@ bool Datastructures::find_fastest_path2(std::shared_ptr<Xpoint> origin_pt, std::
         }
 
     }
-    qDebug() << origin_pt->dist;
     return isFound;
 }
 
@@ -1362,18 +1361,18 @@ Cost Datastructures::fibre_cost(std::pair<Coord, Coord> fibre_pair)
 
 void Datastructures::cycle_for_trim(std::vector<std::shared_ptr<Xpoint> > xpoints_vec)
 {
-    int vec_size = xpoints_vec.size();
+//    int vec_size = xpoints_vec.size();
     std::pair<std::shared_ptr<Xpoint>, std::shared_ptr<Xpoint>> cycle_pair;
     // Checking one by one, all the xpoints
     int index = 0;
-    for (; index < vec_size; index++)
+    while (xpoints_vec.size() != 0)
+//    for (; index < vec_size; index++)
     {
         cycle_pair = find_cycle(xpoints_vec[index]);
         // if the cycle is found
         if (cycle_pair.first != nullptr)
         {
             std::vector<Coord> cy_path = cycle_path(cycle_pair.first, cycle_pair.second);
-//            reset_marked_xpoints();
             reset_marked_xpoints_set();
             int cy_size = cy_path.size();
             Cost max_cost = -1;
@@ -1395,6 +1394,75 @@ void Datastructures::cycle_for_trim(std::vector<std::shared_ptr<Xpoint> > xpoint
             }
             remove_fibre(max_pair.first, max_pair.second);
         }
+//        int deleted_elements = 0;
+//        int set_size = marked_xpoints_set.size;
+
+        std::unordered_set<std::shared_ptr<Xpoint>> xpoints_set(xpoints_vec.begin(),
+                                                                xpoints_vec.end());
+
+        std::unordered_set<std::shared_ptr<Xpoint>>::const_iterator
+                set_iterator = marked_xpoints_set.begin();
+        for(; set_iterator != marked_xpoints_set.end(); set_iterator++)
+        {
+            xpoints_set.erase(*set_iterator);
+        }
+
+        std::vector<std::shared_ptr<Xpoint>> new_xpoints_vec;
+        std::unordered_set<std::shared_ptr<Xpoint>>::const_iterator
+                set_ite = xpoints_set.begin();
+        for(; set_ite != xpoints_set.end(); set_ite++)
+        {
+            new_xpoints_vec.push_back(*set_ite);
+        }
+
+        if (new_xpoints_vec.size() != 0)
+        {
+
+        }
+//        index = 0;
+//        vec_size = new_xpoints_vec.size();
+        xpoints_vec.clear();
+        xpoints_vec = new_xpoints_vec;
+        reset_marked_xpoints_set();
     }
 
 }
+
+
+//void Datastructures::cycle_for_trim(std::vector<std::shared_ptr<Xpoint> > xpoints_vec)
+//{
+//    int vec_size = xpoints_vec.size();
+//    std::pair<std::shared_ptr<Xpoint>, std::shared_ptr<Xpoint>> cycle_pair;
+//    // Checking one by one, all the xpoints
+//    int index = 0;
+//    for (; index < vec_size; index++)
+//    {
+//        cycle_pair = find_cycle(xpoints_vec[index]);
+//        // if the cycle is found
+//        if (cycle_pair.first != nullptr)
+//        {
+//            std::vector<Coord> cy_path = cycle_path(cycle_pair.first, cycle_pair.second);
+//            reset_marked_xpoints_set();
+//            int cy_size = cy_path.size();
+//            Cost max_cost = -1;
+//            std::pair<Coord, Coord> max_pair = std::make_pair(NO_COORD, NO_COORD);
+//            // The cycle is found and the maximum path value is checked
+//            for (int index_no = 0; index_no < (cy_size-1); index_no++)
+//            {
+//                Coord first_coord = cy_path[index_no];
+//                Coord second_coord = cy_path[index_no+1];
+
+//                // Searching for the cost of the coordinate pair
+//                Cost path_cost = fibre_cost(std::make_pair(first_coord, second_coord));
+
+//                if (path_cost > max_cost)
+//                {
+//                    max_cost = path_cost;
+//                    max_pair = std::make_pair(first_coord, second_coord);
+//                }
+//            }
+//            remove_fibre(max_pair.first, max_pair.second);
+//        }
+//    }
+
+//}

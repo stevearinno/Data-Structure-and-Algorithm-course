@@ -217,7 +217,7 @@ public:
     // Short rationale for estimate:
     Color total_color(BeaconID id);
 
-    std::unordered_map<BeaconID, std::shared_ptr<Beacon>> BeaconDB;
+
 
     // Phase 2 operations
 
@@ -288,6 +288,7 @@ private:
     BeaconID find_root_beacon(std::unordered_set<BeaconID> beacon_set);
 
     // phase 2    
+    std::unordered_map<BeaconID, std::shared_ptr<Beacon>> BeaconDB;
     std::map<Coord, std::shared_ptr<Xpoint>> XpointDB;
     bool find_xconnection(Coord xpoint1, Coord xpoint2);
     bool find_xpoint(Coord xpoint);
