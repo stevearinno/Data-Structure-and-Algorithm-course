@@ -693,8 +693,10 @@ bool Datastructures::add_fibre(Coord xpoint1, Coord xpoint2, Cost cost)
         new_xpoint1->edges.insert(new_edge1);
         new_xpoint2->edges.insert(new_edge2);
 
-        XpointDB[xpoint1] = new_xpoint1;
-        XpointDB[xpoint2] = new_xpoint2;
+        XpointDB.insert({xpoint1,new_xpoint1});
+        XpointDB.insert({xpoint2,new_xpoint2});
+//        XpointDB[xpoint1] = new_xpoint1;
+//        XpointDB[xpoint2] = new_xpoint2;
 
         return true;
     }
@@ -803,9 +805,10 @@ std::vector<std::pair<Coord, Cost> > Datastructures::route_any(Coord fromxpoint,
     std::shared_ptr<Xpoint> origin_pt = XpointDB[fromxpoint];
     std::shared_ptr<Xpoint> destination_pt = XpointDB[toxpoint];
 
-    if (origin_pt == destination_pt)
+    if (operator==(fromxpoint, toxpoint))
     {
-        return {std::make_pair(origin_pt->coord, 0)};
+        return {std::make_pair(fromxpoint, 0)};
+
     }
     else if (find_any_path(origin_pt, destination_pt))
     {
@@ -911,8 +914,8 @@ Cost Datastructures::trim_fibre_network()
     {
         total_cost = total_cost + fibre_cost(new_fibres_vec[index]);
     }
-
-
+//    reset_marked_xpoints();
+    reset_marked_xpoints_set();
 
     return total_cost;
 }
@@ -969,7 +972,8 @@ bool Datastructures::find_any_path(std::shared_ptr<Xpoint> origin_pt, std::share
 {
     std::queue<std::shared_ptr<Xpoint>> todo;
     origin_pt->dist = 0;
-    marked_xpoints.push_back(origin_pt);
+//    marked_xpoints.push_back(origin_pt);
+    marked_xpoints_set.insert(origin_pt);
     todo.push(origin_pt);    
     while (!todo.empty()){
         std::shared_ptr<Xpoint> current_pt = todo.front();
@@ -983,7 +987,8 @@ bool Datastructures::find_any_path(std::shared_ptr<Xpoint> origin_pt, std::share
             {
                 next_pt->dist = current_pt->dist + current_eg->cost;
                 next_pt->prev = current_pt;
-                marked_xpoints.push_back(next_pt);
+//                marked_xpoints.push_back(next_pt);
+                marked_xpoints_set.insert(next_pt);
                 if (next_pt == destination_pt)
                 {
                     return true;
@@ -993,7 +998,8 @@ bool Datastructures::find_any_path(std::shared_ptr<Xpoint> origin_pt, std::share
         }
         current_pt->isProcessed = true;
     }
-    reset_marked_xpoints();
+//    reset_marked_xpoints();
+    reset_marked_xpoints_set();
     return false;
 }
 
@@ -1004,7 +1010,8 @@ bool Datastructures::find_fastest_path(std::shared_ptr<Xpoint> origin_pt, std::s
     needUpdate = false;
     std::priority_queue<cost_pair, std::vector<cost_pair>, std::greater<cost_pair>> priority_q;
     origin_pt->dist = 0;
-    marked_xpoints.push_back(origin_pt);
+//    marked_xpoints.push_back(origin_pt);
+    marked_xpoints_set.insert(origin_pt);
     priority_q.push(std::make_pair(0, origin_pt));
 
     while (!priority_q.empty())
@@ -1036,20 +1043,76 @@ bool Datastructures::find_fastest_path(std::shared_ptr<Xpoint> origin_pt, std::s
         }
 
     }
+    return isFound;
+}
+
+bool Datastructures::find_fastest_path2(std::shared_ptr<Xpoint> origin_pt, std::shared_ptr<Xpoint> destination_pt)
+{
+    typedef std::pair<Cost, std::shared_ptr<Xpoint>> cost_pair;
+    bool isFound = false;
+    needUpdate = false;
+    std::priority_queue<cost_pair, std::vector<cost_pair>, std::greater<cost_pair>> priority_q;
+    origin_pt->dist = 0;
+//    marked_xpoints.push_back(origin_pt);
+    marked_xpoints_set.insert(origin_pt);
+    priority_q.push(std::make_pair(0, origin_pt));
+
+    while (!priority_q.empty())
+    {
+        std::shared_ptr<Xpoint> current_pt = priority_q.top().second;
+        priority_q.pop();
+        if (current_pt->isProcessed == false)
+        {
+            std::unordered_set<std::shared_ptr<Edge>>::const_iterator set_iterator = current_pt->edges.begin();
+            for(; set_iterator != current_pt->edges.end(); set_iterator++)
+            {
+                std::shared_ptr<Edge> current_eg = *set_iterator;
+                std::shared_ptr<Xpoint> next_pt = current_eg->target;
+                if ((next_pt->dist == -1) && (!next_pt->isProcessed))
+                {
+                    if (next_pt == destination_pt)
+                    {
+                        isFound = true;
+                    }
+                    priority_q.push(std::make_pair((current_pt->dist + current_eg->cost), next_pt));
+                }
+                relax2(current_pt, next_pt, current_eg->cost);
+                if (needUpdate)
+                {
+                    priority_q.push(std::make_pair((current_pt->dist + current_eg->cost), next_pt));
+                }
+            }
+            current_pt->isProcessed = true;
+        }
+
+    }
     qDebug() << origin_pt->dist;
     return isFound;
 }
 
 void Datastructures::relax(std::shared_ptr<Xpoint> current_pt, std::shared_ptr<Xpoint> next_pt, Cost cost)
 {
-    if ((next_pt->dist == -1) || (next_pt->dist >= (current_pt->dist + cost)))
+    if ((next_pt->dist == -1) || (next_pt->dist > (current_pt->dist + cost)))
     {
         next_pt->dist = current_pt->dist + cost;
         next_pt->prev = current_pt;
-//        next_pt->isTrimmed = true;
         needUpdate = true;
 
-        marked_xpoints.push_back(next_pt);        
+//        marked_xpoints.push_back(next_pt);
+        marked_xpoints_set.insert(next_pt);
+    }
+}
+
+void Datastructures::relax2(std::shared_ptr<Xpoint> current_pt, std::shared_ptr<Xpoint> next_pt, Cost cost)
+{
+    if ((next_pt->dist == -1) || (next_pt->dist > (current_pt->dist + cost)))
+    {
+        next_pt->dist = current_pt->dist + cost;
+        next_pt->prev = current_pt;
+        needUpdate = true;
+
+//        marked_xpoints.push_back(next_pt);
+        marked_xpoints_set.insert(next_pt);
     }
 }
 
@@ -1065,7 +1128,8 @@ std::pair<std::shared_ptr<Xpoint>, std::shared_ptr<Xpoint>> Datastructures::find
         if ((current_pt->dist == -1) && (!current_pt->isProcessed))
         {
             current_pt->dist = 0;
-            marked_xpoints.push_back(current_pt);
+//            marked_xpoints.push_back(current_pt);
+            marked_xpoints_set.insert(current_pt);
             xpoint_stack.push(current_pt);
             std::unordered_set<std::shared_ptr<Edge>>::const_iterator set_iterator = current_pt->edges.begin();
             for(; set_iterator != current_pt->edges.end(); set_iterator++)
@@ -1077,7 +1141,8 @@ std::pair<std::shared_ptr<Xpoint>, std::shared_ptr<Xpoint>> Datastructures::find
                 {
                     xpoint_stack.push(next_pt);
                     next_pt->prev = current_pt;
-                    marked_xpoints.push_back(next_pt);
+//                    marked_xpoints.push_back(next_pt);
+                    marked_xpoints_set.insert(next_pt);
 
                 }
 
@@ -1090,11 +1155,11 @@ std::pair<std::shared_ptr<Xpoint>, std::shared_ptr<Xpoint>> Datastructures::find
         else
         {
             current_pt->isProcessed = true;
-            marked_xpoints.push_back(current_pt);
+//            marked_xpoints.push_back(current_pt);
+            marked_xpoints_set.insert(current_pt);
         }
 
     }
-//    reset_marked_xpoints();
     return {nullptr, nullptr};
 }
 
@@ -1116,7 +1181,8 @@ std::vector<std::pair<Coord, Cost> > Datastructures::final_path(std::shared_ptr<
         current_pt->dist = -1;
         current_pt->isProcessed = false;
     }
-    reset_marked_xpoints();
+//    reset_marked_xpoints();
+    reset_marked_xpoints_set();
 
     return route_vector;
 }
@@ -1138,22 +1204,35 @@ std::vector<Coord > Datastructures::cycle_path(std::shared_ptr<Xpoint> origin_pt
         current_pt->dist = -1;
         current_pt->isProcessed = false;
     }
-    reset_marked_xpoints();
+//    reset_marked_xpoints();
+    reset_marked_xpoints_set();
     return coord_vector;
 }
 
-void Datastructures::reset_marked_xpoints()
+//void Datastructures::reset_marked_xpoints()
+//{
+//    std::vector<std::shared_ptr<Xpoint>>::const_iterator vector_iterator = marked_xpoints.begin();
+//    for(; vector_iterator != marked_xpoints.end(); vector_iterator++)
+//    {
+//        std::shared_ptr<Xpoint> current_xpoint = *vector_iterator;
+//        current_xpoint->dist = -1;
+//        current_xpoint->prev = nullptr;
+//        current_xpoint->isProcessed = false;
+//    }
+//    marked_xpoints.clear();
+//}
+
+void Datastructures::reset_marked_xpoints_set()
 {
-    std::vector<std::shared_ptr<Xpoint>>::const_iterator vector_iterator = marked_xpoints.begin();
-    for(; vector_iterator != marked_xpoints.end(); vector_iterator++)
+    std::unordered_set<std::shared_ptr<Xpoint>>::const_iterator set_iterator = marked_xpoints_set.begin();
+    for(; set_iterator != marked_xpoints_set.end(); set_iterator++)
     {
-        std::shared_ptr<Xpoint> current_xpoint = *vector_iterator;
+        std::shared_ptr<Xpoint> current_xpoint = *set_iterator;
         current_xpoint->dist = -1;
         current_xpoint->prev = nullptr;
         current_xpoint->isProcessed = false;
-        current_xpoint->isTrimmed = false;
     }
-    marked_xpoints.clear();
+    marked_xpoints_set.clear();
 }
 
 void Datastructures::recursive_update_dist(std::shared_ptr<Xpoint> origin_pt, std::vector<std::shared_ptr<Xpoint> > destination_vec)
@@ -1161,7 +1240,7 @@ void Datastructures::recursive_update_dist(std::shared_ptr<Xpoint> origin_pt, st
     int vec_size = destination_vec.size();
     for(int index = 0; index < vec_size; index++)
     {
-        find_fastest_path(origin_pt, destination_vec[index]);
+        find_fastest_path2(origin_pt, destination_vec[index]);
         final_path2(origin_pt, destination_vec[index]);
     }
 
@@ -1225,7 +1304,8 @@ void Datastructures::final_path2(std::shared_ptr<Xpoint> origin_pt, std::shared_
     {
         valid_fibres.push_back(*set_iterator);
     }
-    reset_marked_xpoints();
+//    reset_marked_xpoints();
+    reset_marked_xpoints_set();
 }
 
 Cost Datastructures::fibre_cost(std::pair<Coord, Coord> fibre_pair)
@@ -1261,7 +1341,8 @@ void Datastructures::cycle_for_trim(std::vector<std::shared_ptr<Xpoint> > xpoint
         if (cycle_pair.first != nullptr)
         {
             std::vector<Coord> cy_path = cycle_path(cycle_pair.first, cycle_pair.second);
-            reset_marked_xpoints();
+//            reset_marked_xpoints();
+            reset_marked_xpoints_set();
             int cy_size = cy_path.size();
             Cost max_cost = -1;
             std::pair<Coord, Coord> max_pair = std::make_pair(NO_COORD, NO_COORD);

@@ -115,7 +115,6 @@ struct Xpoint
     Cost dist = -1;
     std::shared_ptr<Xpoint> prev = nullptr;
     bool isProcessed = false;
-    bool isTrimmed = false;
 };
 
 struct Edge
@@ -268,8 +267,7 @@ public:
     // Short rationale for estimate:
     Cost trim_fibre_network();
 
-//    std::unordered_map<Coord, std::shared_ptr<Xpoint>, CoordHash> XpointDB;
-    std::map<Coord, std::shared_ptr<Xpoint>> XpointDB;
+
 
 private:
     // Add stuff needed for your class impleme>ntation here
@@ -289,20 +287,25 @@ private:
     void modify_total_color(BeaconID id, Color new_color, Color old_color = NO_COLOR);
     BeaconID find_root_beacon(std::unordered_set<BeaconID> beacon_set);
 
-    // phase 2
+    // phase 2    
+    std::map<Coord, std::shared_ptr<Xpoint>> XpointDB;
     bool find_xconnection(Coord xpoint1, Coord xpoint2);
     bool find_xpoint(Coord xpoint);
     void remove_subfibre(Coord xpoint1, Coord xpoint2);
     bool find_any_path(std::shared_ptr<Xpoint> origin_pt, std::shared_ptr<Xpoint> destination_pt);
     bool find_fastest_path(std::shared_ptr<Xpoint> origin_pt, std::shared_ptr<Xpoint> destination_pt);
     void relax(std::shared_ptr<Xpoint> current_pt, std::shared_ptr<Xpoint> next_pt, Cost cost);
+    bool find_fastest_path2(std::shared_ptr<Xpoint> origin_pt, std::shared_ptr<Xpoint> destination_pt);
+    void relax2(std::shared_ptr<Xpoint> current_pt, std::shared_ptr<Xpoint> next_pt, Cost cost);
     std::pair<std::shared_ptr<Xpoint>, std::shared_ptr<Xpoint>> find_cycle(std::shared_ptr<Xpoint> origin_pt);
     std::vector<std::pair<Coord, Cost>> final_path(std::shared_ptr<Xpoint> origin_pt, std::shared_ptr<Xpoint> destination_pt);
     std::vector<Coord> cycle_path(std::shared_ptr<Xpoint> origin_pt, std::shared_ptr<Xpoint> destination_pt);
 
-    std::vector<std::shared_ptr<Xpoint>> marked_xpoints;
+//    std::vector<std::shared_ptr<Xpoint>> marked_xpoints;
+    std::unordered_set<std::shared_ptr<Xpoint>> marked_xpoints_set;
     bool needUpdate;
-    void reset_marked_xpoints();
+//    void reset_marked_xpoints();
+    void reset_marked_xpoints_set();
 
     void recursive_update_dist(std::shared_ptr<Xpoint> origin_pt, std::vector<std::shared_ptr<Xpoint>> destination_vec);
     void final_path2(std::shared_ptr<Xpoint> origin_pt, std::shared_ptr<Xpoint> destination_pt);
