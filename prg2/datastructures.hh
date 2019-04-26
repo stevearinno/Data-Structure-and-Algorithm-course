@@ -308,6 +308,7 @@ private:
     void final_path2(std::shared_ptr<Xpoint> origin_pt, std::shared_ptr<Xpoint> destination_pt);
     std::vector<std::pair<Coord, Coord>> valid_fibres;
     Cost fibre_cost(std::pair<Coord, Coord> fibre_pair);
+    void cycle_for_trim(std::vector<std::shared_ptr<Xpoint>> xpoints_vec);
 
 };
 
