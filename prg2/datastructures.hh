@@ -302,10 +302,8 @@ private:
     std::vector<std::pair<Coord, Cost>> final_path(std::shared_ptr<Xpoint> origin_pt, std::shared_ptr<Xpoint> destination_pt);
     std::vector<Coord> cycle_path(std::shared_ptr<Xpoint> origin_pt, std::shared_ptr<Xpoint> destination_pt);
 
-//    std::vector<std::shared_ptr<Xpoint>> marked_xpoints;
     std::unordered_set<std::shared_ptr<Xpoint>> marked_xpoints_set;
     bool needUpdate;
-//    void reset_marked_xpoints();
     void reset_marked_xpoints_set();
 
     void recursive_update_dist(std::shared_ptr<Xpoint> origin_pt, std::vector<std::shared_ptr<Xpoint>> destination_vec);
