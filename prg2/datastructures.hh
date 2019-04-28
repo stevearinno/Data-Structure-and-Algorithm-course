@@ -290,6 +290,7 @@ public:
 
 private:
     // Add stuff needed for your class impleme>ntation here
+    std::unordered_map<BeaconID, std::shared_ptr<Beacon>> BeaconDB;
     int no_of_beacon = 0;
     BeaconID min_bright_beacon = NO_ID;
     BeaconID max_bright_beacon = NO_ID;
@@ -306,8 +307,7 @@ private:
     void modify_total_color(BeaconID id, Color new_color, Color old_color = NO_COLOR);
     BeaconID find_root_beacon(std::unordered_set<BeaconID> beacon_set);
 
-    // phase 2    
-    std::unordered_map<BeaconID, std::shared_ptr<Beacon>> BeaconDB;
+    // phase 2
     std::map<Coord, std::shared_ptr<Xpoint>> XpointDB;
     bool find_xconnection(Coord xpoint1, Coord xpoint2);
     bool find_xpoint(Coord xpoint);
