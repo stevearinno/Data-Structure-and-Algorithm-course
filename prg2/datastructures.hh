@@ -221,50 +221,69 @@ public:
 
     // Phase 2 operations
 
-    // Estimate of performance:
-    // Short rationale for estimate:
+    // Estimate of performance: O(log n)
+    // Short rationale for estimate: I am using map and then put into
+    // the vector for the output whose performance is O(1)
     std::vector<Coord> all_xpoints();
 
-    // Estimate of performance:
-    // Short rationale for estimate:
+    // Estimate of performance: O(log n)
+    // Short rationale for estimate: I search an element on the map and
+    // then insert it. So the overall performance is O(log n)
     bool add_fibre(Coord xpoint1, Coord xpoint2, Cost cost);
 
-    // Estimate of performance:
-    // Short rationale for estimate:
+    // Estimate of performance: O(m log m + log n)
+    // Short rationale for estimate: First I search an element on the map,
+    // O(log n). Then I iterate through all the edges, which is unordered_set,
+    // O(m), where m is number of edges, and put into the vector. Finally
+    // sort the vector O(m log m).
     std::vector<std::pair<Coord, Cost>> get_fibres_from(Coord xpoint);
 
-    // Estimate of performance:
-    // Short rationale for estimate:
+    // Estimate of performance: O(m*n)
+    // Short rationale for estimate: First I iterate through the map, O(n),
+    // then iterate though the edge set, O(m), and insert it to set, O(log m),
+    // Finally, push it into the vector O(1). Since it is a nested loop, so
+    // I multiply number of edges and number of data.
     std::vector<std::pair<Coord, Coord>> all_fibres();
 
-    // Estimate of performance:
-    // Short rationale for estimate:
+    // Estimate of performance: O(m + log n)
+    // Short rationale for estimate: First find_xconnection from the map,
+    // O(log n) and then iterate through the edges, O(m). I am not sure if
+    // the total complexity should be O(m) or O(m + log n) or O(log n) because
+    // it seems n is much more larger than n.
+    // Then for removing subfiber, O(m + log n) for pretty much the same algorithm
+    // as the find_xconnection, but in here, we erase the connection.
     bool remove_fibre(Coord xpoint1, Coord xpoint2);
 
-    // Estimate of performance:
-    // Short rationale for estimate:
+    // Estimate of performance: amortized O(m*n)
+    // Short rationale for estimate: It is amortized O(m*n), because we have to
+    // go through all the nodes and edges, but once it is deleted, it is gradually
+    // decreases
     void clear_fibres();
 
-    // Estimate of performance:
-    // Short rationale for estimate:
+    // Estimate of performance: O(m+n)
+    // Short rationale for estimate: In here, I am using BFS, O(m+n)
     std::vector<std::pair<Coord, Cost>> route_any(Coord fromxpoint, Coord toxpoint);
 
     // Non-compulsory operations
 
-    // Estimate of performance:
-    // Short rationale for estimate:
+    // Estimate of performance: O(m+n)
+    // Short rationale for estimate: In here, I am using BFS, O(m+n)
     std::vector<std::pair<Coord, Cost>> route_least_xpoints(Coord fromxpoint, Coord toxpoint);
 
-    // Estimate of performance:
-    // Short rationale for estimate:
+    // Estimate of performance: O((m+n) log n)
+    // Short rationale for estimate: I am usind Djikstra's algorithm
     std::vector<std::pair<Coord, Cost>> route_fastest(Coord fromxpoint, Coord toxpoint);
 
-    // Estimate of performance:
-    // Short rationale for estimate:
+    // Estimate of performance: O(m+n)
+    // Short rationale for estimate: In here, I am using DFS to find the loop, O(m+n)
     std::vector<Coord> route_fibre_cycle(Coord startxpoint);
 
-    // Estimate of performance:
-    // Short rationale for estimate:
+    // Estimate of performance: O(n(m+n) log n)
+    // Short rationale for estimate: First, I update the fastest distance for all the
+    // nodes using Djikstra, amortized O(n(m+n) log n). Then I tried to find the cycle
+    // using DFS, amortized O(m+n), it is amortized because I exclude all the gray nodes
+    // for the next run. The performance is really bad that it can pass only on the first
+    // row of perftest. It is timed out on n=30.
     Cost trim_fibre_network();
 
 
