@@ -115,6 +115,7 @@ struct Xpoint
     Cost dist = -1;
     std::shared_ptr<Xpoint> prev = nullptr;
     bool isProcessed = false;
+    int set_no = -1;
 };
 
 struct Edge
@@ -247,9 +248,8 @@ public:
 
     // Estimate of performance: O(m + log n)
     // Short rationale for estimate: First find_xconnection from the map,
-    // O(log n) and then iterate through the edges, O(m). I am not sure if
-    // the total complexity should be O(m) or O(m + log n) or O(log n) because
-    // it seems n is much more larger than m.
+    // O(log n) and then iterate through the edges, O(m). If the graph is fully
+    // connected. m can go to n^2 (worst case)
     // Then for removing subfiber, O(m + log n) for pretty much the same algorithm
     // as the find_xconnection, but in here, we erase the connection.
     bool remove_fibre(Coord xpoint1, Coord xpoint2);
@@ -278,12 +278,9 @@ public:
     // Short rationale for estimate: In here, I am using DFS to find the loop, O(m+n)
     std::vector<Coord> route_fibre_cycle(Coord startxpoint);
 
-    // Estimate of performance: O(n(m+n) log n)
-    // Short rationale for estimate: First, I update the fastest distance for all the
-    // nodes using Djikstra, amortized O(n(m+n) log n). Then I tried to find the cycle
-    // using DFS, amortized O(m+n), it is amortized because I exclude all the gray nodes
-    // for the next run. The performance is really bad that it can pass only on the first
-    // row of perftest. It is timed out on n=30.
+    // Estimate of performance: O(m log m)
+    // Short rationale for estimate: I am using Kruskal's algorithm, O(m log m), where m is
+    // number of edges
     Cost trim_fibre_network();
 
 
@@ -315,8 +312,6 @@ private:
     bool find_any_path(std::shared_ptr<Xpoint> origin_pt, std::shared_ptr<Xpoint> destination_pt);
     bool find_fastest_path(std::shared_ptr<Xpoint> origin_pt, std::shared_ptr<Xpoint> destination_pt);
     void relax(std::shared_ptr<Xpoint> current_pt, std::shared_ptr<Xpoint> next_pt, Cost cost);
-    bool find_fastest_path2(std::shared_ptr<Xpoint> origin_pt, std::shared_ptr<Xpoint> destination_pt);
-    void relax2(std::shared_ptr<Xpoint> current_pt, std::shared_ptr<Xpoint> next_pt, Cost cost);
     std::pair<std::shared_ptr<Xpoint>, std::shared_ptr<Xpoint>> find_cycle(std::shared_ptr<Xpoint> origin_pt);
     std::vector<std::pair<Coord, Cost>> final_path(std::shared_ptr<Xpoint> origin_pt, std::shared_ptr<Xpoint> destination_pt);
     std::vector<Coord> cycle_path(std::shared_ptr<Xpoint> origin_pt, std::shared_ptr<Xpoint> destination_pt);
@@ -326,11 +321,8 @@ private:
     void reset_marked_xpoints_set();
 
     void recursive_update_dist(std::shared_ptr<Xpoint> origin_pt, std::vector<std::shared_ptr<Xpoint>> destination_vec);
-    void final_path2(std::shared_ptr<Xpoint> origin_pt, std::shared_ptr<Xpoint> destination_pt);
-    std::vector<std::pair<Coord, Coord>> valid_fibres;
     Cost fibre_cost(std::pair<Coord, Coord> fibre_pair);
-    void cycle_for_trim(std::vector<std::shared_ptr<Xpoint>> xpoints_vec);
-    bool isFibreValid = false;
+    void reset_set_no();
 
 };
 
