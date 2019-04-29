@@ -923,16 +923,19 @@ Cost Datastructures::trim_fibre_network()
     std::vector<std::pair<Coord, Coord>> fibres_vec = all_fibres();
     std::vector<std::shared_ptr<Xpoint>> xpoints_pts;
 
+    // converts vector of coord to vector of pointers
     int vec_size = xpoints_vec.size();
     for(int index = 0; index<vec_size; index++)
     {
         xpoints_pts.push_back(XpointDB[xpoints_vec[index]]);
     }
 
+    // updating all the shortest distance from one node to other node (amortized)
     std::vector<std::shared_ptr<Xpoint>> destination_vec(xpoints_pts.begin()+1,
                                                          xpoints_pts.end());
     recursive_update_dist(xpoints_pts[0], destination_vec);
 
+    // removes unwanted fibres
     int fibres_size = fibres_vec.size();
     for(int index = 0; index<fibres_size; index++)
     {
@@ -943,9 +946,10 @@ Cost Datastructures::trim_fibre_network()
         }
     }
 
-    // detect the cycle
+    // detect the cycle and delete the largest distance on a cycle
     cycle_for_trim(xpoints_pts);
 
+    // calculate the total cost of the network
     std::vector<std::pair<Coord, Coord>> new_fibres_vec = all_fibres();
     int new_vec_size = new_fibres_vec.size();
     int total_cost = 0;
@@ -1357,12 +1361,10 @@ Cost Datastructures::fibre_cost(std::pair<Coord, Coord> fibre_pair)
 
 void Datastructures::cycle_for_trim(std::vector<std::shared_ptr<Xpoint> > xpoints_vec)
 {
-//    int vec_size = xpoints_vec.size();
     std::pair<std::shared_ptr<Xpoint>, std::shared_ptr<Xpoint>> cycle_pair;
     // Checking one by one, all the xpoints
     int index = 0;
     while (xpoints_vec.size() != 0)
-//    for (; index < vec_size; index++)
     {
         cycle_pair = find_cycle(xpoints_vec[index]);
         // if the cycle is found

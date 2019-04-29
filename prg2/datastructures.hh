@@ -249,7 +249,7 @@ public:
     // Short rationale for estimate: First find_xconnection from the map,
     // O(log n) and then iterate through the edges, O(m). I am not sure if
     // the total complexity should be O(m) or O(m + log n) or O(log n) because
-    // it seems n is much more larger than n.
+    // it seems n is much more larger than m.
     // Then for removing subfiber, O(m + log n) for pretty much the same algorithm
     // as the find_xconnection, but in here, we erase the connection.
     bool remove_fibre(Coord xpoint1, Coord xpoint2);
@@ -271,7 +271,7 @@ public:
     std::vector<std::pair<Coord, Cost>> route_least_xpoints(Coord fromxpoint, Coord toxpoint);
 
     // Estimate of performance: O((m+n) log n)
-    // Short rationale for estimate: I am usind Djikstra's algorithm
+    // Short rationale for estimate: I am using Djikstra's algorithm
     std::vector<std::pair<Coord, Cost>> route_fastest(Coord fromxpoint, Coord toxpoint);
 
     // Estimate of performance: O(m+n)
@@ -330,6 +330,7 @@ private:
     std::vector<std::pair<Coord, Coord>> valid_fibres;
     Cost fibre_cost(std::pair<Coord, Coord> fibre_pair);
     void cycle_for_trim(std::vector<std::shared_ptr<Xpoint>> xpoints_vec);
+    bool isFibreValid = false;
 
 };
 
