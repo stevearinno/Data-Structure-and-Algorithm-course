@@ -278,9 +278,9 @@ public:
     // Short rationale for estimate: In here, I am using DFS to find the loop, O(m+n)
     std::vector<Coord> route_fibre_cycle(Coord startxpoint);
 
-    // Estimate of performance: O(m log m)
+    // Estimate of performance: O(m log n)
     // Short rationale for estimate: I am using Kruskal's algorithm, O(m log m), where m is
-    // number of edges
+    // the number of edges and n is the number of vertices.
     Cost trim_fibre_network();
 
 
