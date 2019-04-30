@@ -650,7 +650,10 @@ std::vector<Coord> Datastructures::all_xpoints()
                     map_iterator = XpointDB.begin();
             for(; map_iterator != XpointDB.end(); map_iterator++)
             {
-                xpoints_vector.push_back(map_iterator->first);
+                if (!(map_iterator->second->edges.empty()))
+                {
+                    xpoints_vector.push_back(map_iterator->first);
+                }
             }
 
     return xpoints_vector;
